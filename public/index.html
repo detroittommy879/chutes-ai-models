@@ -15,13 +15,25 @@
     <body>
         <div class="container">
             <header>
-                <h1>Chutes AI Model Explorer <span class="badge-enhanced">Enhanced</span></h1>
+                <div class="header-bar">
+                    <h1>Chutes AI Model Explorer <span class="badge-enhanced">Enhanced</span></h1>
+                    <div class="header-actions">
+                        <label class="theme-selector-label" for="themeSelector">Theme</label>
+                        <select id="themeSelector" class="theme-selector">
+                            <option value="light-default">Light - Default</option>
+                            <option value="light-warm">Light - Warm</option>
+                            <option value="dark-default" selected>Dark - Default</option>
+                            <option value="dark-vibrant">Dark - Vibrant</option>
+                            <option value="dark-midnight">Dark - Midnight</option>
+                        </select>
+                    </div>
+                </div>
                 <p>Browse ALL AI models including text, image, video, and audio generation</p>
-                
+
                 <div class="controls">
-                    <div class="filter-group">
-                        <label for="templateFilter">Template:</label>
-                        <select id="templateFilter">
+                    <div class="control-group">
+                        <label class="control-label" for="templateFilter">Template</label>
+                        <select id="templateFilter" class="control-input">
                             <option value="">All Templates</option>
                             <option value="vllm">VLLM (Text)</option>
                             <option value="comfyui">ComfyUI (Image/Video)</option>
@@ -30,14 +42,14 @@
                         </select>
                     </div>
 
-                    <div class="filter-group">
-                        <label for="nameSearch">Search Name:</label>
-                        <input type="text" id="nameSearch" placeholder="Search by name...">
+                    <div class="control-group">
+                        <label class="control-label" for="nameSearch">Search Name</label>
+                        <input type="text" id="nameSearch" class="control-input" placeholder="Search by name..." />
                     </div>
 
-                    <div class="filter-group">
-                        <label for="limitSelect">Show:</label>
-                        <select id="limitSelect">
+                    <div class="control-group">
+                        <label class="control-label" for="limitSelect">Show</label>
+                        <select id="limitSelect" class="control-input">
                             <option value="25">25 models</option>
                             <option value="50">50 models</option>
                             <option value="100" selected>100 models</option>
@@ -46,7 +58,12 @@
                         </select>
                     </div>
 
-                    <button id="updateBtn" class="update-btn">Update Models</button>
+                    <button id="updateBtn" class="action-button">Update Models</button>
+
+                    <div class="control-spacer" aria-hidden="true"></div>
+
+                    <button id="downloadCsvBtn" class="ghost-button" type="button">Download CSV</button>
+                    <button id="downloadMdBtn" class="ghost-button" type="button">Download Markdown</button>
                 </div>
             </header>
 

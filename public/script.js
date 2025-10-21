@@ -14,9 +14,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const nameSearch = document.getElementById('nameSearch');
     const limitSelect = document.getElementById('limitSelect');
 
+    // Theme and download controls
+    const themeSelector = document.getElementById('themeSelector');
+    const downloadCsvBtn = document.getElementById('downloadCsvBtn');
+    const downloadMdBtn = document.getElementById('downloadMdBtn');
+
     // State
     let currentSort = { column: null, direction: 'asc' };
     let allModels = [];
+    let fullModelsList = []; // Store all models from server for client-side filtering
+    let filteredModels = []; // Store filtered results
     let currentPage = 0;
     let totalModels = 0;
     let limit = 100;
@@ -24,6 +31,147 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // API endpoint (our local server)
     const API_URL = '/api/models';
+
+    // Initialize theme
+    initializeTheme();
+
+    // Theme management
+    function initializeTheme() {
+        // Check for stored preference first
+        const storedTheme = localStorage.getItem('theme');
+        
+        let theme;
+        if (storedTheme) {
+            theme = storedTheme;
+        } else {
+            // Check OS preference
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            // Default to dark-default if no preference detected or if dark is preferred
+            theme = prefersDark ? 'dark-default' : 'dark-default';
+        }
+        
+        setTheme(theme);
+    }
+
+    function setTheme(theme) {
+        document.body.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        themeSelector.value = theme;
+    }
+
+    function handleThemeChange(event) {
+        const selectedTheme = event.target.value;
+        setTheme(selectedTheme);
+    }
+
+    // Download functions
+    function downloadCSV() {
+        const sortedModels = sortModelsData(allModels, currentSort.column, currentSort.direction);
+        
+        // CSV header
+        const headers = ['Model Name', 'Template', 'Input Modality', 'Output Modality', 'Input Price ($/M)', 'Output Price ($/M)', 'Invocations', 'Status', 'Hot', 'Chutes AI Link'];
+        const csvRows = [headers.join(',')];
+        
+        // CSV rows
+        sortedModels.forEach(model => {
+            const name = (model.name || 'Unknown').replace(/"/g, '""');
+            const template = model.standard_template || 'custom';
+            const v1Model = v1ModelsMap.get(model.name);
+            const inputModality = v1Model?.input_modalities?.join(';') || 'text';
+            const outputModality = v1Model?.output_modalities?.join(';') || 'text';
+            const inputPrice = model.current_estimated_price?.per_million_tokens?.input?.usd || 0;
+            const outputPrice = model.current_estimated_price?.per_million_tokens?.output?.usd || 0;
+            const invocations = model.invocation_count || 0;
+            const hasActiveInstance = (model.instances || []).some(inst => inst.active && inst.verified);
+            const status = hasActiveInstance ? 'Active' : 'Inactive';
+            const hot = model.hot ? 'Yes' : 'No';
+            const chuteId = model.chute_id || '';
+            const link = chuteId ? `https://chutes.ai/app/chute/${chuteId}` : '';
+            
+            const row = [
+                `"${name}"`,
+                template,
+                inputModality,
+                outputModality,
+                inputPrice.toFixed(3),
+                outputPrice.toFixed(3),
+                invocations,
+                status,
+                hot,
+                link
+            ];
+            csvRows.push(row.join(','));
+        });
+        
+        const csvContent = csvRows.join('\n');
+        downloadFile(csvContent, 'chutes-models.csv', 'text/csv');
+    }
+
+    function downloadMarkdown() {
+        const sortedModels = sortModelsData(allModels, currentSort.column, currentSort.direction);
+        
+        let mdContent = '# Chutes AI Models\n\n';
+        mdContent += `*Generated on ${new Date().toLocaleDateString()}*\n\n`;
+        mdContent += `**Total Models:** ${sortedModels.length}\n\n`;
+        mdContent += '---\n\n';
+        
+        // Table header
+        mdContent += '| Model Name | Template | Input → Output | Input Price | Output Price | Invocations | Status | Hot |\n';
+        mdContent += '|------------|----------|----------------|-------------|--------------|-------------|--------|-----|\n';
+        
+        // Table rows
+        sortedModels.forEach(model => {
+            const name = model.name || 'Unknown';
+            const template = (model.standard_template || 'custom').toUpperCase();
+            const v1Model = v1ModelsMap.get(model.name);
+            const inputModality = v1Model?.input_modalities?.join(', ') || 'text';
+            const outputModality = v1Model?.output_modalities?.join(', ') || 'text';
+            const modality = `${inputModality} → ${outputModality}`;
+            const inputPrice = `$${(model.current_estimated_price?.per_million_tokens?.input?.usd || 0).toFixed(3)}`;
+            const outputPrice = `$${(model.current_estimated_price?.per_million_tokens?.output?.usd || 0).toFixed(3)}`;
+            const invocations = formatInvocations(model.invocation_count || 0);
+            const hasActiveInstance = (model.instances || []).some(inst => inst.active && inst.verified);
+            const status = hasActiveInstance ? '✅ Active' : '❌ Inactive';
+            const hot = model.hot ? '🔥 Hot' : 'Cold';
+            const chuteId = model.chute_id || '';
+            const modelLink = chuteId ? `[${name}](https://chutes.ai/app/chute/${chuteId})` : name;
+            
+            mdContent += `| ${modelLink} | ${template} | ${modality} | ${inputPrice} | ${outputPrice} | ${invocations} | ${status} | ${hot} |\n`;
+        });
+        
+        mdContent += '\n---\n\n';
+        mdContent += '*Powered by [Chutes AI](https://chutes.ai)*\n';
+        
+        downloadFile(mdContent, 'chutes-models.md', 'text/markdown');
+    }
+
+    function downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    // Create colorful modality badges
+    function createModalityBadgesHTML(inputs, outputs) {
+        const inputBadges = inputs.map(m => `<span class="modality-badge ${getModalityClass(m)}">${m}</span>`).join(' ');
+        const outputBadges = outputs.map(m => `<span class="modality-badge ${getModalityClass(m)}">${m}</span>`).join(' ');
+        return `${inputBadges}<span class="modality-arrow">→</span>${outputBadges}`;
+    }
+
+    function getModalityClass(modality) {
+        const mod = modality.toLowerCase();
+        if (mod === 'text') return 'text';
+        if (mod === 'image') return 'image';
+        if (mod === 'audio') return 'audio';
+        if (mod === 'video') return 'video';
+        return 'other';
+    }
 
     // Debounce function for search
     function debounce(func, wait) {
@@ -62,16 +210,14 @@ document.addEventListener('DOMContentLoaded', function() {
             showLoading();
             
             const params = new URLSearchParams();
-            params.append('page', currentPage);
-            params.append('limit', limit);
+            params.append('page', 0);
+            params.append('limit', 1000); // Fetch all models once
             params.append('include_public', 'true');
             params.append('include_schemas', 'true');
             
+            // Only apply template filter to server request
             if (templateFilter.value) {
                 params.append('template', templateFilter.value);
-            }
-            if (nameSearch.value.trim()) {
-                params.append('name', nameSearch.value.trim());
             }
 
             const response = await fetch(`${API_URL}?${params.toString()}`);
@@ -86,10 +232,11 @@ document.addEventListener('DOMContentLoaded', function() {
             updateCacheStatus(cacheStatus, cacheAge);
 
             const data = await response.json();
-            totalModels = data.total || 0;
-            displayModels(data);
-            updateStats(data);
-            updatePagination();
+            fullModelsList = data.items || [];
+            
+            // Apply client-side filters
+            applyFilters();
+            
             hideLoading();
 
         } catch (err) {
@@ -97,6 +244,34 @@ document.addEventListener('DOMContentLoaded', function() {
             showError();
             hideLoading();
         }
+    }
+
+    // Apply client-side filtering (search and pagination)
+    function applyFilters() {
+        // Start with full list
+        let filtered = [...fullModelsList];
+        
+        // Apply name search filter (client-side)
+        const searchTerm = nameSearch.value.trim().toLowerCase();
+        if (searchTerm) {
+            filtered = filtered.filter(model => {
+                const modelName = (model.name || '').toLowerCase();
+                return modelName.includes(searchTerm);
+            });
+        }
+        
+        filteredModels = filtered;
+        totalModels = filtered.length;
+        
+        // Calculate pagination
+        const startIndex = currentPage * limit;
+        const endIndex = startIndex + limit;
+        allModels = filtered.slice(startIndex, endIndex);
+        
+        // Display results
+        displayModels({ items: allModels, total: totalModels });
+        updateStats({ items: allModels, total: totalModels });
+        updatePagination();
     }
 
     // Display models in the container
@@ -172,6 +347,8 @@ document.addEventListener('DOMContentLoaded', function() {
         row.className = 'model-row';
 
         const name = model.name || 'Unknown';
+        const chuteId = model.chute_id || '';
+        const modelUrl = chuteId ? `https://chutes.ai/app/chute/${chuteId}` : '#';
         const template = model.standard_template || 'custom';
         const inputPrice = model.current_estimated_price?.per_million_tokens?.input?.usd || 0;
         const outputPrice = model.current_estimated_price?.per_million_tokens?.output?.usd || 0;
@@ -182,26 +359,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Try to get modality info from v1 models
         const v1Model = v1ModelsMap.get(model.name);
-        const inputModalities = v1Model?.input_modalities || [];
-        const outputModalities = v1Model?.output_modalities || [];
+        let inputModalities = v1Model?.input_modalities || [];
+        let outputModalities = v1Model?.output_modalities || [];
         const supportedFeatures = v1Model?.supported_features || [];
         
-        // Determine modality display
-        let modalityDisplay = '';
-        if (inputModalities.length > 0 || outputModalities.length > 0) {
-            const inputs = inputModalities.length > 0 ? inputModalities.join(', ') : 'text';
-            const outputs = outputModalities.length > 0 ? outputModalities.join(', ') : 'text';
-            modalityDisplay = `${inputs} → ${outputs}`;
-        } else {
-            // Infer from template
+        // Infer from template if not available
+        if (inputModalities.length === 0 && outputModalities.length === 0) {
             if (template === 'vllm' || template === 'tgi') {
-                modalityDisplay = 'text → text';
+                inputModalities = ['text'];
+                outputModalities = ['text'];
             } else if (template === 'comfyui') {
-                modalityDisplay = 'text/image → image/video';
+                inputModalities = ['text', 'image'];
+                outputModalities = ['image', 'video'];
             } else {
-                modalityDisplay = 'various';
+                inputModalities = ['text'];
+                outputModalities = ['text'];
             }
         }
+        
+        // Create modality badges HTML
+        const modalityDisplay = createModalityBadgesHTML(inputModalities, outputModalities);
 
         // Check if any instance is active
         const hasActiveInstance = instances.some(inst => inst.active && inst.verified);
@@ -219,11 +396,13 @@ document.addEventListener('DOMContentLoaded', function() {
             : '<span style="color: #999;">N/A</span>';
 
         row.innerHTML = `
-            <div class="model-cell model-name" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
+            <div class="model-cell model-name" title="${escapeHtml(name)}">
+                ${chuteId ? `<a href="${modelUrl}" target="_blank" rel="noopener noreferrer" class="model-link">${escapeHtml(name)}</a>` : escapeHtml(name)}
+            </div>
             <div class="model-cell template">
                 <span class="template-badge ${template}">${template.toUpperCase()}</span>
             </div>
-            <div class="model-cell modalities" title="${modalityDisplay}">
+            <div class="model-cell modalities">
                 <small>${modalityDisplay}</small>
                 ${supportedFeatures.length > 0 ? `<div class="features-mini">${supportedFeatures.slice(0, 2).map(f => `<span class="feature-mini">${formatFeatureName(f)}</span>`).join('')}</div>` : ''}
             </div>
@@ -425,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
     prevBtn.addEventListener('click', () => {
         if (currentPage > 0) {
             currentPage--;
-            fetchModels();
+            applyFilters();
         }
     });
 
@@ -433,27 +612,34 @@ document.addEventListener('DOMContentLoaded', function() {
         const totalPages = Math.ceil(totalModels / limit);
         if (currentPage < totalPages - 1) {
             currentPage++;
-            fetchModels();
+            applyFilters();
         }
     });
 
     templateFilter.addEventListener('change', () => {
         currentPage = 0;
-        fetchModels();
+        fetchModels(); // Re-fetch from server when template changes
     });
 
     limitSelect.addEventListener('change', () => {
         limit = parseInt(limitSelect.value);
         currentPage = 0;
-        fetchModels();
+        applyFilters();
     });
 
     const debouncedSearch = debounce(() => {
         currentPage = 0;
-        fetchModels();
-    }, 500);
+        applyFilters(); // Client-side filtering only
+    }, 300);
 
     nameSearch.addEventListener('input', debouncedSearch);
+
+    // Theme selector listener
+    themeSelector.addEventListener('change', handleThemeChange);
+
+    // Download button listeners
+    downloadCsvBtn.addEventListener('click', downloadCSV);
+    downloadMdBtn.addEventListener('click', downloadMarkdown);
 
     // Initial load - fetch v1 models first for modality info
     fetchV1Models().then(() => {

@@ -6,13 +6,14 @@ const cors = require('cors');
 const fs = require('fs').promises;
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3888;
 const CHUTES_API_KEY = process.env.CHUTES_API_KEY;
 const CHUTES_BASE_URL = process.env.CHUTES_BASE_URL || 'https://api.chutes.ai';
 
-// Cache configuration
+// Cache configuration - configurable via environment variable
 const CACHE_DIR = path.join(__dirname, 'cache');
-const CACHE_DURATION = 3 * 60 * 1000; // 3 minutes in milliseconds
+const CACHE_DURATION_MINUTES = parseInt(process.env.CACHE_DURATION_MINUTES || '10', 10);
+const CACHE_DURATION = CACHE_DURATION_MINUTES * 60 * 1000; // Convert minutes to milliseconds
 
 // In-memory cache tracker
 const cacheTracker = new Map();
@@ -353,6 +354,7 @@ app.listen(PORT, () => {
     console.log(`✅ Chutes Models Enhanced Server running on http://localhost:${PORT}`);
     console.log(`📡 Using Chutes API: ${CHUTES_BASE_URL}`);
     console.log(`🔑 API Key configured: ${CHUTES_API_KEY ? 'Yes' : 'No'}`);
-    console.log(`💾 Cache enabled: ${CACHE_DURATION / 1000} seconds (${CACHE_DURATION / 60000} minutes)`);
+    console.log(`💾 Cache enabled: ${CACHE_DURATION / 1000} seconds (${CACHE_DURATION_MINUTES} minutes)`);
     console.log(`📁 Cache directory: ${CACHE_DIR}`);
+    console.log(`⏱️  API calls only happen when cache expires AND someone visits the site`);
 });
