@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chutes AI Model Explorer - Enhanced</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="styles.css" />
+    </head>
+    <body>
+        <div class="container">
+            <header>
+                <h1>Chutes AI Model Explorer <span class="badge-enhanced">Enhanced</span></h1>
+                <p>Browse ALL AI models including text, image, video, and audio generation</p>
+                
+                <div class="controls">
+                    <div class="filter-group">
+                        <label for="templateFilter">Template:</label>
+                        <select id="templateFilter">
+                            <option value="">All Templates</option>
+                            <option value="vllm">VLLM (Text)</option>
+                            <option value="comfyui">ComfyUI (Image/Video)</option>
+                            <option value="tgi">TGI (Text)</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="nameSearch">Search Name:</label>
+                        <input type="text" id="nameSearch" placeholder="Search by name...">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="limitSelect">Show:</label>
+                        <select id="limitSelect">
+                            <option value="25">25 models</option>
+                            <option value="50">50 models</option>
+                            <option value="100" selected>100 models</option>
+                            <option value="200">200 models</option>
+                            <option value="1000">All models</option>
+                        </select>
+                    </div>
+
+                    <button id="updateBtn" class="update-btn">Update Models</button>
+                </div>
+            </header>
+
+            <main>
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading complete model information...</p>
+                </div>
+
+                <div id="error" class="error hidden">
+                    <p>Failed to load model information. Please check server logs.</p>
+                </div>
+
+                <div id="stats" class="stats hidden">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Models:</span>
+                        <span class="stat-value" id="totalModels">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Showing:</span>
+                        <span class="stat-value" id="showingModels">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Page:</span>
+                        <span class="stat-value" id="currentPage">1</span>
+                    </div>
+                    <div class="stat-item cache-status" id="cacheStatus" style="display: none;">
+                        <span class="stat-label">Cache:</span>
+                        <span class="stat-value" id="cacheInfo">-</span>
+                    </div>
+                </div>
+
+                <div id="modelsContainer" class="models-container hidden">
+                    <!-- Models will be dynamically inserted here -->
+                </div>
+
+                <div id="pagination" class="pagination hidden">
+                    <button id="prevBtn" class="page-btn">← Previous</button>
+                    <span id="pageInfo"></span>
+                    <button id="nextBtn" class="page-btn">Next →</button>
+                </div>
+            </main>
+        </div>
+
+        <script src="script.js"></script>
+    </body>
+</html>
