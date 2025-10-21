@@ -29,8 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let limit = 100;
     let v1ModelsMap = new Map(); // Map of model IDs to v1 model data (for modalities)
 
-    // API endpoint (our local server)
-    const API_URL = '/api/models';
+    // API endpoint (our local server) - auto-detect base path
+    const BASE_PATH = window.location.pathname.match(/^\/[^\/]+\//)?.[0] || '/';
+    const API_URL = `${BASE_PATH}api/models`.replace(/\/+/g, '/');
 
     // Initialize theme
     initializeTheme();
@@ -189,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch v1 models data (for modalities info)
     async function fetchV1Models() {
         try {
-            const response = await fetch('/api/models/v1/all');
+            const response = await fetch(`${BASE_PATH}api/models/v1/all`.replace(/\/+/g, '/'));
             if (response.ok) {
                 const data = await response.json();
                 if (data.data && Array.isArray(data.data)) {

@@ -1,5 +1,5 @@
 # Use official Node.js LTS image (supports ARM64)
-FROM node:20-alpine
+FROM node:20-bookworm-slim
 
 # Set working directory
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copy application files
 COPY . .
