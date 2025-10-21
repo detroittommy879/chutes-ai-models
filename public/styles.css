@@ -849,7 +849,106 @@ body[data-theme='dark-midnight'] .template-badge.custom {
     color: var(--color-text-muted);
 }
 
-@media (max-width: 1400px) {
+/* Mobile: Enable horizontal scrolling for table */
+@media (max-width: 768px) {
+    body {
+        font-size: 14px;
+        padding: 16px 10px;
+    }
+
+    header {
+        padding: 20px 16px;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    header p {
+        font-size: 0.9rem;
+    }
+
+    main {
+        padding: 16px;
+    }
+
+    .controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .control-group,
+    .ghost-button,
+    .action-button {
+        width: 100%;
+    }
+
+    .control-spacer {
+        display: none;
+    }
+
+    .control-label {
+        font-size: 0.85rem;
+    }
+
+    .control-input,
+    .action-button,
+    .ghost-button {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+
+    /* Make table scrollable horizontally */
+    .models-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 0 -16px;
+        padding: 0 16px;
+    }
+
+    /* Show only Model Name, Input, Output as main columns, rest scrollable */
+    .table-header,
+    .model-row {
+        grid-template-columns: minmax(180px, 2fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(100px, 1fr) minmax(100px, 1fr);
+        min-width: 900px; /* Force horizontal scroll */
+    }
+
+    .header-cell,
+    .model-cell {
+        font-size: 0.85rem;
+        padding: 10px 8px;
+    }
+
+    .model-name {
+        font-size: 0.9rem;
+    }
+
+    /* Stats adjustments */
+    .stats {
+        flex-wrap: wrap;
+        gap: 8px;
+        font-size: 0.85rem;
+    }
+
+    .stat-item {
+        min-width: calc(50% - 8px);
+    }
+
+    /* Pagination adjustments */
+    .pagination {
+        font-size: 0.9rem;
+        gap: 10px;
+    }
+
+    .page-btn {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Tablet: Reduce some columns but keep readable */
+@media (min-width: 769px) and (max-width: 1200px) {
     .table-header,
     .model-row {
         grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr;
@@ -864,58 +963,19 @@ body[data-theme='dark-midnight'] .template-badge.custom {
     }
 }
 
-@media (max-width: 1200px) {
+/* Large tablet/small desktop */
+@media (min-width: 1201px) and (max-width: 1400px) {
     .table-header,
     .model-row {
-        grid-template-columns: 2fr 1fr 1.5fr;
+        grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 1fr;
     }
 
-    .model-cell:nth-child(n + 4) {
+    .model-cell:nth-child(n + 7) {
         display: none;
     }
 
-    .header-cell:nth-child(n + 4) {
-        display: none;
-    }
-}
-
-@media (max-width: 900px) {
-    .controls {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .control-group,
-    .ghost-button,
-    .action-button {
-        width: 100%;
-    }
-
-    .control-spacer {
+    .header-cell:nth-child(n + 7) {
         display: none;
     }
 }
 
-@media (max-width: 768px) {
-    header {
-        padding: 26px;
-    }
-
-    header h1 {
-        font-size: 1.9rem;
-    }
-
-    main {
-        padding: 24px;
-    }
-
-    .table-header,
-    .model-row {
-        grid-template-columns: 1fr;
-    }
-
-    .model-cell,
-    .header-cell {
-        border-bottom: 1px solid var(--color-border);
-    }
-}

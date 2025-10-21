@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let filteredModels = []; // Store filtered results
     let currentPage = 0;
     let totalModels = 0;
-    let limit = 100;
+    let limit = 1000; // Default to all models
     let v1ModelsMap = new Map(); // Map of model IDs to v1 model data (for modalities)
 
     // API endpoint (our local server) - auto-detect base path
