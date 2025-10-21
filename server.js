@@ -21,7 +21,11 @@ const cacheTracker = new Map();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+
+// Serve static files from dist in production, public in development
+const staticDir = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
+app.use(express.static(staticDir));
+console.log(`📂 Serving static files from: ${staticDir}`);
 
 // Initialize cache directory
 async function initCache() {
@@ -347,7 +351,8 @@ app.get('/api/cache/status', async (req, res) => {
 
 // Serve the main page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    const htmlFile = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
+    res.sendFile(path.join(__dirname, htmlFile, 'index.html'));
 });
 
 app.listen(PORT, () => {
