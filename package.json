@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Enhanced Chutes AI Model Explorer with complete API access",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
