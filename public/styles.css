@@ -524,7 +524,7 @@ body[data-theme='dark-midnight'] .error {
 
 .table-header {
     display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1.5fr 1fr 0.8fr 0.9fr 1fr 1fr 1fr 0.8fr 0.8fr;
     background: var(--color-table-header-bg);
     color: var(--color-table-header-text);
     font-weight: 700;
@@ -559,7 +559,7 @@ body[data-theme='dark-midnight'] .error {
 
 .model-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 1.5fr 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 2fr 1fr 1.5fr 1fr 0.8fr 0.9fr 1fr 1fr 1fr 0.8fr 0.8fr;
     border-top: 1px solid var(--color-border);
     transition: background 0.2s ease, transform 0.2s ease;
 }
@@ -739,6 +739,16 @@ body[data-theme='dark-midnight'] .template-badge.custom {
     font-weight: 600;
 }
 
+.quant-badge {
+    background: var(--color-chip-bg);
+    color: var(--color-chip-text);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
 .gpu-toggle {
     background: transparent;
     color: var(--color-accent);
@@ -910,8 +920,8 @@ body[data-theme='dark-midnight'] .template-badge.custom {
     /* Show only Model Name, Input, Output as main columns, rest scrollable */
     .table-header,
     .model-row {
-        grid-template-columns: minmax(180px, 2fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(120px, 1fr) minmax(120px, 1fr) minmax(100px, 1fr) minmax(100px, 1fr);
-        min-width: 900px; /* Force horizontal scroll */
+        grid-template-columns: minmax(180px, 2fr) minmax(100px, 1fr) minmax(120px, 1fr) minmax(100px, 1fr) minmax(80px, 0.8fr) minmax(90px, 0.9fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(120px, 1fr) minmax(80px, 0.8fr) minmax(80px, 0.8fr);
+        min-width: 1100px; /* Force horizontal scroll */
     }
 
     .header-cell,

@@ -301,6 +301,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Input → Output</span>
                 <span class="sort-indicator ${currentSort.column === 'modalities' ? 'active' : ''}">${getSortIcon('modalities')}</span>
             </div>
+            <div class="header-cell" data-column="context">
+                <span>Context</span>
+                <span class="sort-indicator ${currentSort.column === 'context' ? 'active' : ''}">${getSortIcon('context')}</span>
+            </div>
+            <div class="header-cell" data-column="quantization">
+                <span>Quant</span>
+                <span class="sort-indicator ${currentSort.column === 'quantization' ? 'active' : ''}">${getSortIcon('quantization')}</span>
+            </div>
+            <div class="header-cell" data-column="created">
+                <span>Created</span>
+                <span class="sort-indicator ${currentSort.column === 'created' ? 'active' : ''}">${getSortIcon('created')}</span>
+            </div>
             <div class="header-cell" data-column="inputPrice">
                 <span>Input Price</span>
                 <span class="sort-indicator ${currentSort.column === 'inputPrice' ? 'active' : ''}">${getSortIcon('inputPrice')}</span>
@@ -363,6 +375,9 @@ document.addEventListener('DOMContentLoaded', function() {
         let inputModalities = v1Model?.input_modalities || [];
         let outputModalities = v1Model?.output_modalities || [];
         const supportedFeatures = v1Model?.supported_features || [];
+        const contextWindow = v1Model?.max_model_len || v1Model?.context_length || null;
+        const quantization = v1Model?.quantization || null;
+        const createdDate = v1Model?.created ? new Date(v1Model.created * 1000).toLocaleDateString() : null;
         
         // Infer from template if not available
         if (inputModalities.length === 0 && outputModalities.length === 0) {
@@ -406,6 +421,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="model-cell modalities">
                 <small>${modalityDisplay}</small>
                 ${supportedFeatures.length > 0 ? `<div class="features-mini">${supportedFeatures.slice(0, 2).map(f => `<span class="feature-mini">${formatFeatureName(f)}</span>`).join('')}</div>` : ''}
+            </div>
+            <div class="model-cell context" title="${contextWindow ? formatNumber(contextWindow) + ' tokens' : 'N/A'}">
+                ${contextWindow ? formatNumber(contextWindow) : '<span style="color: #999;">N/A</span>'}
+            </div>
+            <div class="model-cell quantization" title="${quantization || 'N/A'}">
+                ${quantization ? `<span class="quant-badge">${escapeHtml(quantization)}</span>` : '<span style="color: #999;">N/A</span>'}
+            </div>
+            <div class="model-cell created" title="${createdDate || 'N/A'}">
+                ${createdDate || '<span style="color: #999;">N/A</span>'}
             </div>
             <div class="model-cell price" title="$${inputPrice.toFixed(3)}/M tokens">$${inputPrice.toFixed(3)}</div>
             <div class="model-cell price" title="$${outputPrice.toFixed(3)}/M tokens">$${outputPrice.toFixed(3)}</div>
@@ -497,6 +521,33 @@ document.addEventListener('DOMContentLoaded', function() {
                     bVal = getModalityString(b);
                     return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
 
+                case 'context':
+                    const getContext = (model) => {
+                        const v1Model = v1ModelsMap.get(model.name);
+                        return v1Model?.max_model_len || v1Model?.context_length || 0;
+                    };
+                    aVal = getContext(a);
+                    bVal = getContext(b);
+                    return direction === 'asc' ? aVal - bVal : bVal - aVal;
+
+                case 'quantization':
+                    const getQuant = (model) => {
+                        const v1Model = v1ModelsMap.get(model.name);
+                        return v1Model?.quantization || '';
+                    };
+                    aVal = getQuant(a);
+                    bVal = getQuant(b);
+                    return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+
+                case 'created':
+                    const getCreated = (model) => {
+                        const v1Model = v1ModelsMap.get(model.name);
+                        return v1Model?.created || 0;
+                    };
+                    aVal = getCreated(a);
+                    bVal = getCreated(b);
+                    return direction === 'asc' ? aVal - bVal : bVal - aVal;
+
                 case 'status':
                     aVal = (a.instances || []).some(inst => inst.active && inst.verified) ? 1 : 0;
                     bVal = (b.instances || []).some(inst => inst.active && inst.verified) ? 1 : 0;
@@ -557,6 +608,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    function formatNumber(num) {
+        if (num === null || num === undefined || typeof num !== 'number') return 'N/A';
+        return num.toLocaleString();
     }
 
     function formatInvocations(count) {
