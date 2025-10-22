@@ -1,15 +1,68 @@
 <!doctype html>
 <html lang="en">
     <head>
+        <!-- Google Analytics -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8B90DGEJV"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() {
+                dataLayer.push(arguments);
+            }
+            gtag('js', new Date());
+            gtag('config', 'G-V8B90DGEJV');
+        </script>
+
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Chutes AI Model Explorer - Enhanced</title>
+        
+        <!-- Primary Meta Tags -->
+        <title>Chutes AI Model Explorer - Enhanced | Browse All AI Models</title>
+        <meta name="title" content="Chutes AI Model Explorer - Enhanced | Browse All AI Models" />
+        <meta name="description" content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability for VLLM, ComfyUI, TGI, and custom models." />
+        <meta name="keywords" content="AI models, Chutes AI, VLLM, ComfyUI, TGI, AI model explorer, AI pricing, text generation, image generation, video generation, audio AI, machine learning models, LLM comparison" />
+        <meta name="author" content="wuu73.org" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://wuu73.org/chutes-models-enhanced/" />
+
+        <!-- Open Graph / Facebook -->
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://wuu73.org/chutes-models-enhanced/" />
+        <meta property="og:title" content="Chutes AI Model Explorer - Enhanced | Browse All AI Models" />
+        <meta property="og:description" content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability." />
+        <meta property="og:image" content="https://wuu73.org/chutes-models-enhanced/og-image.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:site_name" content="Chutes AI Model Explorer" />
+        <meta property="og:locale" content="en_US" />
+
+        <!-- Twitter Card -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content="https://wuu73.org/chutes-models-enhanced/" />
+        <meta name="twitter:title" content="Chutes AI Model Explorer - Enhanced | Browse All AI Models" />
+        <meta name="twitter:description" content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability." />
+        <meta name="twitter:image" content="https://wuu73.org/chutes-models-enhanced/og-image.png" />
+        <meta name="twitter:creator" content="@wuu73" />
+
+        <!-- Additional SEO Meta Tags -->
+        <meta name="theme-color" content="#060b16" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="format-detection" content="telephone=no" />
+
+        <!-- Favicon (add your favicon files) -->
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+        <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
             href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
             rel="stylesheet"
         />
+        
+        <!-- Stylesheet -->
         <link rel="stylesheet" href="styles.css" />
     </head>
     <body>
@@ -94,6 +147,19 @@
                         <span class="stat-label">Cache:</span>
                         <span class="stat-value" id="cacheInfo">-</span>
                     </div>
+                </div>
+
+                <div class="resource-links hidden" id="resourceLinks">
+                    <a href="https://wuu73.org/blog/" target="_blank" rel="noopener noreferrer" class="resource-link">
+                       
+                        <span class="link-text">Lots of cool AI stuff and links</span>
+                        <span class="link-arrow">→</span>
+                    </a>
+                    <a href="https://wuu73.org/aicp" target="_blank" rel="noopener noreferrer" class="resource-link">
+                        <span class="link-icon">🔧</span>
+                        <span class="link-text">Free Local AI Surgical Context Automater</span>
+                        <span class="link-arrow">→</span>
+                    </a>
                 </div>
 
                 <div id="modelsContainer" class="models-container hidden">

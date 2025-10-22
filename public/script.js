@@ -592,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('showingModels').textContent = data.items?.length || 0;
         document.getElementById('currentPage').textContent = (currentPage + 1);
         stats.classList.remove('hidden');
+        document.getElementById('resourceLinks').classList.remove('hidden');
     }
 
     // Update pagination controls

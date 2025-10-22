@@ -1,3 +1,7 @@
+[![Open Graph Image](public/og-image.png)](public/og-image.png)
+
+[Live Version](https://extra.wuu73.org/chu/)
+
 # Chutes AI Model Explorer - Enhanced Version
 
 This is an enhanced version of the Chutes AI Model Explorer that includes:
@@ -9,6 +13,7 @@ This is an enhanced version of the Chutes AI Model Explorer that includes:
 - **Detailed pricing information** (USD and TAO)
 - **GPU requirements and availability**
 - **Invocation counts and popularity metrics**
+- **Context Window Size**
 
 ## Key Differences from Basic Version
 
@@ -52,9 +57,8 @@ This enhanced version uses the `/chutes/` endpoint which:
 ## Features
 
 ### Smart Caching System 💾
-- **3-minute cache** for API responses
+- **3-10 minute cache** for API responses
 - Reduces API calls by **80-95%**
-- Two-tier caching (memory + disk)
 - Multiple users share cached data
 - See [CACHING.md](CACHING.md) for details
 
