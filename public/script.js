@@ -352,6 +352,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         modelsContainer.classList.remove('hidden');
+        
+        // Add latency testing checkboxes and show tester
+        addTestCheckboxes();
+        showLatencyTester();
     }
 
     // Create a model row element
@@ -375,7 +379,8 @@ document.addEventListener('DOMContentLoaded', function() {
         let inputModalities = v1Model?.input_modalities || [];
         let outputModalities = v1Model?.output_modalities || [];
         const supportedFeatures = v1Model?.supported_features || [];
-        const contextWindow = v1Model?.max_model_len || v1Model?.context_length || null;
+    const inputContext = v1Model?.context_length || null;
+    const outputContext = v1Model?.max_output_length || null;
         const quantization = v1Model?.quantization || null;
         const createdDate = v1Model?.created ? new Date(v1Model.created * 1000).toLocaleDateString() : null;
         
@@ -393,8 +398,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Create modality badges HTML
-        const modalityDisplay = createModalityBadgesHTML(inputModalities, outputModalities);
+    // Create modality badges HTML
+    const modalityDisplay = createModalityBadgesHTML(inputModalities, outputModalities);
 
         // Check if any instance is active
         const hasActiveInstance = instances.some(inst => inst.active && inst.verified);
@@ -422,8 +427,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <small>${modalityDisplay}</small>
                 ${supportedFeatures.length > 0 ? `<div class="features-mini">${supportedFeatures.slice(0, 2).map(f => `<span class="feature-mini">${formatFeatureName(f)}</span>`).join('')}</div>` : ''}
             </div>
-            <div class="model-cell context" title="${contextWindow ? formatNumber(contextWindow) + ' tokens' : 'N/A'}">
-                ${contextWindow ? formatNumber(contextWindow) : '<span style="color: #999;">N/A</span>'}
+            <div class="model-cell context" title="${inputContext ? formatNumber(inputContext) + ' in, ' : ''}${outputContext ? formatNumber(outputContext) + ' out' : ''}">
+                ${inputContext ? `<span title='Input context'>${formatNumber(inputContext)} in</span>` : '<span style="color: #999;">N/A</span>'}
+                ${outputContext ? `<span title='Output context'> / ${formatNumber(outputContext)} out</span>` : ''}
             </div>
             <div class="model-cell quantization" title="${quantization || 'N/A'}">
                 ${quantization ? `<span class="quant-badge">${escapeHtml(quantization)}</span>` : '<span style="color: #999;">N/A</span>'}
@@ -524,11 +530,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'context':
                     const getContext = (model) => {
                         const v1Model = v1ModelsMap.get(model.name);
-                        return v1Model?.max_model_len || v1Model?.context_length || 0;
+                        // Sort by input context, then output context if input is equal
+                        const input = v1Model?.context_length || 0;
+                        const output = v1Model?.max_output_length || 0;
+                        return { input, output };
                     };
                     aVal = getContext(a);
                     bVal = getContext(b);
-                    return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    if (aVal.input !== bVal.input) {
+                        return direction === 'asc' ? aVal.input - bVal.input : bVal.input - aVal.input;
+                    } else {
+                        return direction === 'asc' ? aVal.output - bVal.output : bVal.output - aVal.output;
+                    }
 
                 case 'quantization':
                     const getQuant = (model) => {
@@ -698,6 +711,237 @@ document.addEventListener('DOMContentLoaded', function() {
     // Download button listeners
     downloadCsvBtn.addEventListener('click', downloadCSV);
     downloadMdBtn.addEventListener('click', downloadMarkdown);
+
+    // ========== LATENCY TESTING FUNCTIONALITY ==========
+    const latencyTester = document.getElementById('latencyTester');
+    const selectAllTestBtn = document.getElementById('selectAllTestBtn');
+    const selectTop10Btn = document.getElementById('selectTop10Btn');
+    const clearSelectionBtn = document.getElementById('clearSelectionBtn');
+    const runLatencyTestBtn = document.getElementById('runLatencyTestBtn');
+    const testPromptInput = document.getElementById('testPrompt');
+    const latencyResults = document.getElementById('latencyResults');
+
+    let selectedForTest = new Set();
+    let testingInProgress = false;
+
+    // Show latency tester when models are loaded
+    function showLatencyTester() {
+        if (latencyTester && allModels.length > 0) {
+            latencyTester.style.display = 'block';
+        }
+    }
+
+    // Add checkboxes to model rows
+    function addTestCheckboxes() {
+        const sortedModels = sortModelsData(allModels, currentSort.column, currentSort.direction);
+        const modelRows = document.querySelectorAll('.model-row');
+        modelRows.forEach((row, index) => {
+            if (!row.querySelector('.test-checkbox')) {
+                const model = sortedModels[index];
+                if (!model) return;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'test-checkbox';
+                checkbox.dataset.modelName = model.name;
+                checkbox.dataset.modelTemplate = model.standard_template || 'custom';
+                checkbox.style.marginRight = '8px';
+                checkbox.addEventListener('change', updateTestSelection);
+                
+                const nameCell = row.querySelector('.model-name');
+                if (nameCell) {
+                    nameCell.insertBefore(checkbox, nameCell.firstChild);
+                }
+            }
+        });
+    }
+
+    function updateTestSelection() {
+        selectedForTest.clear();
+        document.querySelectorAll('.test-checkbox:checked').forEach(cb => {
+            selectedForTest.add(cb.dataset.modelName);
+        });
+        updateTestButton();
+    }
+
+    function updateTestButton() {
+        const count = selectedForTest.size;
+        runLatencyTestBtn.textContent = `Run Test (${count} selected)`;
+        runLatencyTestBtn.disabled = count === 0 || testingInProgress;
+    }
+
+    selectAllTestBtn.addEventListener('click', () => {
+        document.querySelectorAll('.test-checkbox').forEach(cb => {
+            cb.checked = true;
+        });
+        updateTestSelection();
+    });
+
+    selectTop10Btn.addEventListener('click', () => {
+        document.querySelectorAll('.test-checkbox').forEach((cb, idx) => {
+            cb.checked = idx < 10;
+        });
+        updateTestSelection();
+    });
+
+    clearSelectionBtn.addEventListener('click', () => {
+        document.querySelectorAll('.test-checkbox').forEach(cb => {
+            cb.checked = false;
+        });
+        updateTestSelection();
+    });
+
+    runLatencyTestBtn.addEventListener('click', async () => {
+        if (testingInProgress || selectedForTest.size === 0) return;
+
+        testingInProgress = true;
+        runLatencyTestBtn.disabled = true;
+        runLatencyTestBtn.textContent = 'Testing...';
+
+        const testPrompt = testPromptInput.value.trim() || 'Write a haiku about programming.';
+        
+        // Get models by their names from the selected set
+        const modelsToTest = Array.from(selectedForTest)
+            .map(modelName => allModels.find(m => m.name === modelName))
+            .filter(m => m && (m.standard_template === 'vllm' || m.standard_template === 'tgi'));
+
+        if (modelsToTest.length === 0) {
+            alert('No valid text generation models selected. Please select VLLM or TGI models.');
+            testingInProgress = false;
+            updateTestButton();
+            return;
+        }
+
+        // Clear previous results
+        latencyResults.innerHTML = '<div style="color: var(--color-text); margin-bottom: 1rem;">Testing in progress...</div>';
+
+        const results = [];
+
+        for (const model of modelsToTest) {
+            const result = await testModelLatency(model, testPrompt);
+            results.push(result);
+            displayLatencyResults(results);
+        }
+
+        testingInProgress = false;
+        updateTestButton();
+    });
+
+    async function testModelLatency(model, prompt) {
+        const startTime = performance.now();
+        
+        try {
+            const response = await fetch('/api/test-model', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: model.name,
+                    prompt: prompt
+                })
+            });
+
+            const endTime = performance.now();
+            const latency = Math.round(endTime - startTime);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                return {
+                    name: model.name,
+                    status: 'error',
+                    latency: latency,
+                    error: errorData.error || 'Request failed'
+                };
+            }
+
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content || '(Empty response)';
+            const usage = data.usage || {};
+
+            return {
+                name: model.name,
+                status: 'success',
+                latency: latency,
+                response: content,
+                usage: {
+                    prompt_tokens: usage.prompt_tokens || 0,
+                    completion_tokens: usage.completion_tokens || 0,
+                    total_tokens: usage.total_tokens || 0
+                }
+            };
+        } catch (error) {
+            const endTime = performance.now();
+            const latency = Math.round(endTime - startTime);
+            
+            return {
+                name: model.name,
+                status: 'error',
+                latency: latency,
+                error: error.message
+            };
+        }
+    }
+
+    function displayLatencyResults(results) {
+        console.log('Displaying results for', results.length, 'models');
+        
+        const successCount = results.filter(r => r.status === 'success').length;
+        const errorCount = results.filter(r => r.status === 'error').length;
+        const avgLatency = successCount > 0
+            ? Math.round(results.filter(r => r.status === 'success').reduce((sum, r) => sum + r.latency, 0) / successCount)
+            : 0;
+
+        let html = `
+            <div style="margin-bottom: 1rem; padding: 1rem; background: var(--color-surface); border-radius: 8px; border: 1px solid var(--color-border);">
+                <h3 style="margin: 0 0 0.5rem 0; color: var(--color-text);">Test Results (${results.length} models tested)</h3>
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div><strong>Success:</strong> ${successCount}</div>
+                    <div><strong>Failed:</strong> ${errorCount}</div>
+                    <div><strong>Avg Latency:</strong> ${avgLatency}ms</div>
+                    <div><strong>In Progress:</strong> ${results.length - successCount - errorCount}</div>
+                </div>
+            </div>
+            <div style="display: grid; gap: 1rem; grid-template-columns: 1fr;">
+        `;
+
+        results.forEach((result, index) => {
+            console.log(`Result ${index + 1}:`, result.name, result.status);
+            
+            const statusColor = result.status === 'success' ? 'var(--color-success)' : 'var(--color-error)';
+            const statusIcon = result.status === 'success' ? '✅' : '❌';
+
+            html += `
+                <div style="padding: 1rem; background: var(--color-surface); border-radius: 8px; border: 1px solid var(--color-border); margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <strong style="color: var(--color-text); flex: 1; min-width: 200px;">${index + 1}. ${result.name}</strong>
+                        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                            <span style="color: ${statusColor};">${statusIcon} ${result.status.toUpperCase()}</span>
+                            <span style="color: var(--color-accent); font-weight: bold;">${result.latency}ms</span>
+                            ${result.usage ? `
+                                <span style="color: var(--color-text-muted); font-size: 0.85rem;">
+                                    📊 ${result.usage.completion_tokens} tokens
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                    ${result.error ? `<div style="color: var(--color-error); font-size: 0.9rem; margin-top: 0.5rem;">❌ Error: ${result.error}</div>` : ''}
+                    ${result.usage ? `
+                        <div style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 0.5rem; padding: 0.5rem; background: var(--color-bg); border-radius: 4px;">
+                            <strong>Token Usage:</strong> Input: ${result.usage.prompt_tokens} | Output: ${result.usage.completion_tokens} | Total: ${result.usage.total_tokens}
+                        </div>
+                    ` : ''}
+                    ${result.response ? `
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: var(--color-bg); border-radius: 4px; border-left: 3px solid var(--color-accent);">
+                            <div style="font-weight: bold; color: var(--color-text); margin-bottom: 0.5rem; font-size: 0.9rem;">Response:</div>
+                            <div style="color: var(--color-text); font-size: 0.9rem; line-height: 1.6; max-height: 300px; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word;">${escapeHtml(result.response)}</div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        latencyResults.innerHTML = html;
+    }
 
     // Initial load - fetch v1 models first for modality info
     fetchV1Models().then(() => {

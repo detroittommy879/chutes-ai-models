@@ -118,6 +118,28 @@
                     <button id="downloadCsvBtn" class="ghost-button" type="button">Download CSV</button>
                     <button id="downloadMdBtn" class="ghost-button" type="button">Download Markdown</button>
                 </div>
+
+                <!-- Latency Testing Section -->
+                <div class="latency-tester" id="latencyTester" style="display: none;">
+                    <h2 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--color-text);">🚀 Model Latency Tester</h2>
+                    <div class="test-controls" style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 300px;">
+                            <label for="testPrompt" style="display: block; margin-bottom: 0.5rem; color: var(--color-text);">Test Prompt:</label>
+                            <textarea 
+                                id="testPrompt" 
+                                rows="3" 
+                                style="width: 100%; padding: 0.5rem; background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; font-family: inherit;"
+                                placeholder="Enter a test prompt...">Write a haiku about programming.</textarea>
+                        </div>
+                        <div style="flex: 0; min-width: 200px; display: flex; flex-direction: column; justify-content: flex-end; gap: 0.5rem;">
+                            <button id="selectAllTestBtn" class="action-button" style="width: 100%;">Select All Visible</button>
+                            <button id="selectTop10Btn" class="action-button" style="width: 100%;">Select Top 10</button>
+                            <button id="clearSelectionBtn" class="ghost-button" style="width: 100%;">Clear Selection</button>
+                            <button id="runLatencyTestBtn" class="action-button" style="width: 100%;" disabled>Run Test (0 selected)</button>
+                        </div>
+                    </div>
+                    <div id="latencyResults" style="margin-top: 1rem;"></div>
+                </div>
             </header>
 
             <main>

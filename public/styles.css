@@ -1041,3 +1041,71 @@ body[data-theme='dark-midnight'] .template-badge.custom {
     }
 }
 
+/* Latency Testing Styles */
+.latency-tester {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--color-surface);
+    border-radius: 12px;
+    border: 1px solid var(--color-border);
+}
+
+.test-checkbox {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-accent);
+}
+
+.test-checkbox:hover {
+    transform: scale(1.1);
+}
+
+.model-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#latencyResults {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+#latencyResults::-webkit-scrollbar {
+    width: 8px;
+}
+
+#latencyResults::-webkit-scrollbar-track {
+    background: var(--color-surface);
+    border-radius: 4px;
+}
+
+#latencyResults::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+}
+
+#latencyResults::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent);
+}
+
+/* Response text scrollbar */
+.latency-tester ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.latency-tester ::-webkit-scrollbar-track {
+    background: var(--color-surface);
+    border-radius: 4px;
+}
+
+.latency-tester ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 4px;
+}
+
+.latency-tester ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-accent);
+}

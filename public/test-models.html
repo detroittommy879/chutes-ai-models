@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chutes AI Model Latency Tester</title>
+        
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
+            rel="stylesheet"
+        />
+        
+        <!-- React and ReactDOM from CDN -->
+        <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+        
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            :root {
+                --font-family-base: 'Sansation', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto',
+                    'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+                
+                /* Dark theme colors matching the main app */
+                --color-bg: #060b16;
+                --color-surface: #0f172a;
+                --color-surface-alt: #101d37;
+                --color-border: rgba(148, 163, 184, 0.32);
+                --color-heading: rgba(255, 255, 255, 0.94);
+                --color-text: rgba(238, 242, 255, 0.92);
+                --color-text-muted: rgba(203, 213, 225, 0.68);
+                --color-accent: #60a5fa;
+                --color-accent-hover: #3b82f6;
+                --color-accent-contrast: #060b16;
+                --color-status-active: #34d399;
+                --color-status-inactive: #f87171;
+                --color-status-pending: #fbbf24;
+                --shadow-elevated: 0 32px 60px -28px rgba(7, 23, 55, 0.75);
+            }
+
+            body {
+                font-family: var(--font-family-base);
+                line-height: 1.6;
+                background-color: var(--color-bg);
+                color: var(--color-text);
+                min-height: 100vh;
+                padding: 32px 20px;
+                font-weight: 300;
+            }
+
+            .container {
+                max-width: 1600px;
+                margin: 0 auto;
+                background: var(--color-surface);
+                border-radius: 18px;
+                border: 1px solid var(--color-border);
+                box-shadow: var(--shadow-elevated);
+                overflow: hidden;
+            }
+
+            header {
+                padding: 32px;
+                background: var(--color-surface-alt);
+                border-bottom: 1px solid var(--color-border);
+            }
+
+            h1 {
+                font-size: 2.3rem;
+                font-weight: 500;
+                color: var(--color-heading);
+                margin-bottom: 12px;
+            }
+
+            .subtitle {
+                font-size: 1.05rem;
+                color: var(--color-text-muted);
+            }
+
+            main {
+                padding: 32px;
+            }
+
+            .controls {
+                display: flex;
+                gap: 16px;
+                margin-bottom: 24px;
+                flex-wrap: wrap;
+                align-items: flex-end;
+            }
+
+            .control-group {
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+                flex: 1;
+                min-width: 200px;
+            }
+
+            label {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--color-text-muted);
+                font-weight: 700;
+            }
+
+            input, textarea {
+                padding: 10px 14px;
+                border-radius: 10px;
+                border: 1px solid var(--color-border);
+                background: var(--color-surface-alt);
+                color: var(--color-text);
+                font-size: 0.95rem;
+                font-family: inherit;
+                transition: border-color 0.2s ease;
+            }
+
+            input:focus, textarea:focus {
+                outline: none;
+                border-color: var(--color-accent);
+                box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+            }
+
+            textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+            button {
+                padding: 10px 22px;
+                border-radius: 10px;
+                border: none;
+                background: var(--color-accent);
+                color: var(--color-accent-contrast);
+                font-weight: 600;
+                font-size: 0.95rem;
+                cursor: pointer;
+                transition: transform 0.2s ease, background 0.2s ease;
+                font-family: inherit;
+            }
+
+            button:hover:not(:disabled) {
+                transform: translateY(-1px);
+                background: var(--color-accent-hover);
+            }
+
+            button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .models-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+                gap: 24px;
+            }
+
+            .model-card {
+                background: var(--color-surface-alt);
+                border: 1px solid var(--color-border);
+                border-radius: 14px;
+                padding: 20px;
+                transition: border-color 0.3s ease;
+            }
+
+            .model-card.testing {
+                border-color: var(--color-status-pending);
+            }
+
+            .model-card.success {
+                border-color: var(--color-status-active);
+            }
+
+            .model-card.error {
+                border-color: var(--color-status-inactive);
+            }
+
+            .model-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 16px;
+                gap: 12px;
+            }
+
+            .model-name {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--color-heading);
+                word-break: break-word;
+            }
+
+            .model-link {
+                color: var(--color-accent);
+                text-decoration: none;
+                font-size: 0.85rem;
+                white-space: nowrap;
+            }
+
+            .model-link:hover {
+                color: var(--color-accent-hover);
+            }
+
+            .status-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 12px;
+                border-radius: 999px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                margin-bottom: 12px;
+            }
+
+            .status-badge.pending {
+                background: rgba(251, 191, 36, 0.2);
+                color: var(--color-status-pending);
+            }
+
+            .status-badge.testing {
+                background: rgba(96, 165, 250, 0.2);
+                color: var(--color-accent);
+            }
+
+            .status-badge.success {
+                background: rgba(52, 211, 153, 0.2);
+                color: var(--color-status-active);
+            }
+
+            .status-badge.error {
+                background: rgba(248, 113, 113, 0.2);
+                color: var(--color-status-inactive);
+            }
+
+            .latency {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: var(--color-accent);
+                margin-bottom: 12px;
+            }
+
+            .response-box {
+                background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                border-radius: 8px;
+                padding: 12px;
+                max-height: 200px;
+                overflow-y: auto;
+                font-size: 0.9rem;
+                color: var(--color-text-muted);
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+
+            .response-box:empty::before {
+                content: 'No response yet...';
+                color: var(--color-text-muted);
+                opacity: 0.5;
+            }
+
+            .spinner {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(148, 163, 184, 0.2);
+                border-top: 2px solid var(--color-accent);
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            .summary {
+                background: var(--color-surface-alt);
+                border: 1px solid var(--color-border);
+                border-radius: 14px;
+                padding: 20px;
+                margin-bottom: 24px;
+            }
+
+            .summary h2 {
+                font-size: 1.3rem;
+                font-weight: 600;
+                color: var(--color-heading);
+                margin-bottom: 12px;
+            }
+
+            .summary-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 16px;
+            }
+
+            .stat-item {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .stat-label {
+                font-size: 0.8rem;
+                color: var(--color-text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+            }
+
+            .stat-value {
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: var(--color-accent);
+            }
+
+            .error-message {
+                color: var(--color-status-inactive);
+                font-size: 0.85rem;
+                margin-top: 8px;
+            }
+
+            @media (max-width: 768px) {
+                .models-grid {
+                    grid-template-columns: 1fr;
+                }
+                
+                h1 {
+                    font-size: 1.8rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div id="root"></div>
+
+        <script type="text/babel">
+            const { useState, useEffect } = React;
+
+            // Top 10 models from chutes-models.md
+            const MODELS = [
+                {
+                    name: "deepseek-ai/DeepSeek-R1",
+                    url: "https://chutes.ai/app/chute/de510462-c319-543b-9c67-00bcf807d2a7",
+                    id: "de510462-c319-543b-9c67-00bcf807d2a7"
+                },
+                {
+                    name: "deepseek-ai/DeepSeek-R1-0528",
+                    url: "https://chutes.ai/app/chute/14a91d88-d6d6-5046-aaf4-eb3ad96b7247",
+                    id: "14a91d88-d6d6-5046-aaf4-eb3ad96b7247"
+                },
+                {
+                    name: "deepseek-ai/DeepSeek-V3-0324",
+                    url: "https://chutes.ai/app/chute/154ad01c-a431-5744-83c8-651215124360",
+                    id: "154ad01c-a431-5744-83c8-651215124360"
+                },
+                {
+                    name: "tngtech/DeepSeek-TNG-R1T2-Chimera",
+                    url: "https://chutes.ai/app/chute/4fa0c7f5-82f7-59d1-8996-661bb778893d",
+                    id: "4fa0c7f5-82f7-59d1-8996-661bb778893d"
+                },
+                {
+                    name: "deepseek-ai/DeepSeek-V3.1-Terminus",
+                    url: "https://chutes.ai/app/chute/4bbc44e9-6bfc-5e21-a91d-129bff2fb6d4",
+                    id: "4bbc44e9-6bfc-5e21-a91d-129bff2fb6d4"
+                },
+                {
+                    name: "unsloth/gemma-3-4b-it",
+                    url: "https://chutes.ai/app/chute/4d636d79-623c-5688-b57c-264f9e53d85d",
+                    id: "4d636d79-623c-5688-b57c-264f9e53d85d"
+                },
+                {
+                    name: "zai-org/GLM-4.5-Air",
+                    url: "https://chutes.ai/app/chute/7fa03c12-823f-529a-8245-36432f03e9a1",
+                    id: "7fa03c12-823f-529a-8245-36432f03e9a1"
+                },
+                {
+                    name: "zai-org/GLM-4.6-FP8",
+                    url: "https://chutes.ai/app/chute/1aec6931-3bb8-5f5e-a61c-b112276ed140",
+                    id: "1aec6931-3bb8-5f5e-a61c-b112276ed140"
+                },
+                {
+                    name: "unsloth/Mistral-Small-24B-Instruct-2501",
+                    url: "https://chutes.ai/app/chute/986b874c-bf41-549f-b28f-4322f86fa4ba",
+                    id: "986b874c-bf41-549f-b28f-4322f86fa4ba"
+                },
+                {
+                    name: "chutesai/Devstral-Small-2505",
+                    url: "https://chutes.ai/app/chute/6275d63c-ca84-56f2-81c1-93a4070c6348",
+                    id: "6275d63c-ca84-56f2-81c1-93a4070c6348"
+                }
+            ];
+
+            function ModelTester() {
+                const [apiKey, setApiKey] = useState(localStorage.getItem('chutes_api_key') || '');
+                const [testPrompt, setTestPrompt] = useState('What is the capital of France? Answer in one sentence.');
+                const [modelResults, setModelResults] = useState({});
+                const [testing, setTesting] = useState(false);
+
+                useEffect(() => {
+                    if (apiKey) {
+                        localStorage.setItem('chutes_api_key', apiKey);
+                    }
+                }, [apiKey]);
+
+                async function testModel(model) {
+                    const startTime = performance.now();
+                    
+                    try {
+                        const response = await fetch('https://api.chutes.ai/v1/chat/completions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${apiKey}`
+                            },
+                            body: JSON.stringify({
+                                model: model.id,
+                                messages: [
+                                    { role: 'user', content: testPrompt }
+                                ],
+                                temperature: 0.7,
+                                max_tokens: 100
+                            })
+                        });
+
+                        const endTime = performance.now();
+                        const latency = Math.round(endTime - startTime);
+
+                        if (!response.ok) {
+                            const errorData = await response.json().catch(() => ({}));
+                            throw new Error(errorData.error?.message || `HTTP ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        const responseText = data.choices?.[0]?.message?.content || 'No response';
+
+                        return {
+                            status: 'success',
+                            latency,
+                            response: responseText,
+                            error: null
+                        };
+                    } catch (error) {
+                        const endTime = performance.now();
+                        const latency = Math.round(endTime - startTime);
+                        
+                        return {
+                            status: 'error',
+                            latency,
+                            response: '',
+                            error: error.message
+                        };
+                    }
+                }
+
+                async function runTests() {
+                    if (!apiKey.trim()) {
+                        alert('Please enter your Chutes AI API key');
+                        return;
+                    }
+
+                    if (!testPrompt.trim()) {
+                        alert('Please enter a test prompt');
+                        return;
+                    }
+
+                    setTesting(true);
+                    setModelResults({});
+
+                    // Test models sequentially to avoid rate limiting
+                    for (const model of MODELS) {
+                        setModelResults(prev => ({
+                            ...prev,
+                            [model.id]: { status: 'testing', latency: null, response: '', error: null }
+                        }));
+
+                        const result = await testModel(model);
+                        
+                        setModelResults(prev => ({
+                            ...prev,
+                            [model.id]: result
+                        }));
+
+                        // Small delay between requests to be respectful of the API
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+
+                    setTesting(false);
+                }
+
+                const completedTests = Object.values(modelResults).filter(r => r.status === 'success' || r.status === 'error').length;
+                const successfulTests = Object.values(modelResults).filter(r => r.status === 'success').length;
+                const failedTests = Object.values(modelResults).filter(r => r.status === 'error').length;
+                const avgLatency = successfulTests > 0 
+                    ? Math.round(Object.values(modelResults).filter(r => r.status === 'success').reduce((sum, r) => sum + r.latency, 0) / successfulTests)
+                    : 0;
+
+                return (
+                    <div className="container">
+                        <header>
+                            <h1>🚀 Chutes AI Model Latency Tester</h1>
+                            <p className="subtitle">Test the top 10 models for response time and reliability</p>
+                        </header>
+
+                        <main>
+                            <div className="controls">
+                                <div className="control-group" style={{ flex: 2 }}>
+                                    <label htmlFor="apiKey">Chutes AI API Key</label>
+                                    <input
+                                        id="apiKey"
+                                        type="password"
+                                        value={apiKey}
+                                        onChange={(e) => setApiKey(e.target.value)}
+                                        placeholder="Enter your API key..."
+                                    />
+                                </div>
+                                
+                                <div className="control-group" style={{ flex: 3 }}>
+                                    <label htmlFor="testPrompt">Test Prompt</label>
+                                    <textarea
+                                        id="testPrompt"
+                                        value={testPrompt}
+                                        onChange={(e) => setTestPrompt(e.target.value)}
+                                        placeholder="Enter your test prompt..."
+                                    />
+                                </div>
+
+                                <button onClick={runTests} disabled={testing} style={{ alignSelf: 'flex-end' }}>
+                                    {testing ? 'Testing...' : 'Run Tests'}
+                                </button>
+                            </div>
+
+                            {completedTests > 0 && (
+                                <div className="summary">
+                                    <h2>Summary</h2>
+                                    <div className="summary-stats">
+                                        <div className="stat-item">
+                                            <span className="stat-label">Completed</span>
+                                            <span className="stat-value">{completedTests}/{MODELS.length}</span>
+                                        </div>
+                                        <div className="stat-item">
+                                            <span className="stat-label">Successful</span>
+                                            <span className="stat-value" style={{ color: 'var(--color-status-active)' }}>
+                                                {successfulTests}
+                                            </span>
+                                        </div>
+                                        <div className="stat-item">
+                                            <span className="stat-label">Failed</span>
+                                            <span className="stat-value" style={{ color: 'var(--color-status-inactive)' }}>
+                                                {failedTests}
+                                            </span>
+                                        </div>
+                                        <div className="stat-item">
+                                            <span className="stat-label">Avg Latency</span>
+                                            <span className="stat-value">{avgLatency}ms</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="models-grid">
+                                {MODELS.map((model) => {
+                                    const result = modelResults[model.id] || { status: 'pending' };
+                                    
+                                    return (
+                                        <div key={model.id} className={`model-card ${result.status}`}>
+                                            <div className="model-header">
+                                                <div className="model-name">{model.name}</div>
+                                                <a href={model.url} target="_blank" rel="noopener noreferrer" className="model-link">
+                                                    View →
+                                                </a>
+                                            </div>
+
+                                            <div className={`status-badge ${result.status}`}>
+                                                {result.status === 'testing' && <span className="spinner"></span>}
+                                                {result.status === 'pending' && '⏳ Pending'}
+                                                {result.status === 'testing' && 'Testing...'}
+                                                {result.status === 'success' && '✅ Success'}
+                                                {result.status === 'error' && '❌ Error'}
+                                            </div>
+
+                                            {result.latency !== null && (
+                                                <div className="latency">{result.latency}ms</div>
+                                            )}
+
+                                            {result.error && (
+                                                <div className="error-message">Error: {result.error}</div>
+                                            )}
+
+                                            {result.response && (
+                                                <div className="response-box">{result.response}</div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </main>
+                    </div>
+                );
+            }
+
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(<ModelTester />);
+        </script>
+    </body>
+</html>

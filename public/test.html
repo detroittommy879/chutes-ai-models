@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Chutes AI Model Latency Tester</title>
+        
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
+            rel="stylesheet"
+        />
+        
+        <!-- Stylesheet -->
+        <link rel="stylesheet" href="styles.css" />
+        
+        <style>
+            .test-container {
+                max-width: 1600px;
+                margin: 0 auto;
+                padding: 32px 20px;
+            }
+
+            .test-header {
+                background: var(--color-surface-alt);
+                border: 1px solid var(--color-border);
+                border-radius: 18px;
+                padding: 32px;
+                margin-bottom: 24px;
+            }
+
+            .test-header h1 {
+                font-size: 2.3rem;
+                font-weight: 500;
+                color: var(--color-heading);
+                margin-bottom: 12px;
+            }
+
+            .test-header p {
+                font-size: 1.05rem;
+                color: var(--color-text-muted);
+            }
+
+            .test-controls {
+                background: var(--color-surface-alt);
+                border: 1px solid var(--color-border);
+                border-radius: 14px;
+                padding: 24px;
+                margin-bottom: 24px;
+            }
+
+            .control-row {
+                display: flex;
+                gap: 16px;
+                margin-bottom: 16px;
+                flex-wrap: wrap;
+            }
+
+            .control-row:last-child {
+                margin-bottom: 0;
+            }
+
+            .control-field {
+                flex: 1;
+                min-width: 250px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+
+            .control-field label {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                letter-spacing: 0.06em;
+                color: var(--color-text-muted);
+                font-weight: 700;
+            }
+
+            .control-field input,
+            .control-field textarea {
+                padding: 10px 14px;
+                border-radius: 10px;
+                border: 1px solid var(--color-border);
+                background: var(--color-surface);
+                color: var(--color-text);
+                font-size: 0.95rem;
+                font-family: inherit;
+                transition: border-color 0.2s ease;
+            }
+
+            .control-field textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+            .control-field input:focus,
+            .control-field textarea:focus {
+                outline: none;
+                border-color: var(--color-accent);
+                box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+            }
+
+            .test-button {
+                padding: 12px 28px;
+                border-radius: 10px;
+                border: none;
+                background: var(--color-accent);
+                color: var(--color-accent-contrast);
+                font-weight: 600;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: transform 0.2s ease, background 0.2s ease;
+                font-family: inherit;
+                align-self: flex-end;
+            }
+
+            .test-button:hover:not(:disabled) {
+                transform: translateY(-1px);
+                background: var(--color-accent-hover);
+            }
+
+            .test-button:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .summary-section {
+                background: var(--color-surface-alt);
+                border: 1px solid var(--color-border);
+                border-radius: 14px;
+                padding: 24px;
+                margin-bottom: 24px;
+            }
+
+            .summary-section h2 {
+                font-size: 1.3rem;
+                font-weight: 600;
+                color: var(--color-heading);
+                margin-bottom: 16px;
+            }
+
+            .summary-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 16px;
+            }
+
+            .summary-stat {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .summary-stat-label {
+                font-size: 0.8rem;
+                color: var(--color-text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+            }
+
+            .summary-stat-value {
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: var(--color-accent);
+            }
+
+            .models-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+                gap: 24px;
+            }
+
+            .model-test-card {
+                background: var(--color-surface-alt);
+                border: 1px solid var(--color-border);
+                border-radius: 14px;
+                padding: 20px;
+                transition: border-color 0.3s ease;
+            }
+
+            .model-test-card.testing {
+                border-color: var(--color-accent);
+            }
+
+            .model-test-card.success {
+                border-color: var(--color-status-active);
+            }
+
+            .model-test-card.error {
+                border-color: var(--color-status-inactive);
+            }
+
+            .model-card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 16px;
+                gap: 12px;
+            }
+
+            .model-card-name {
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: var(--color-heading);
+                word-break: break-word;
+            }
+
+            .model-card-link {
+                color: var(--color-accent);
+                text-decoration: none;
+                font-size: 0.85rem;
+                white-space: nowrap;
+            }
+
+            .model-card-link:hover {
+                color: var(--color-accent-hover);
+            }
+
+            .status-badge {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 12px;
+                border-radius: 999px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                margin-bottom: 12px;
+            }
+
+            .status-badge.pending {
+                background: rgba(251, 191, 36, 0.2);
+                color: #fbbf24;
+            }
+
+            .status-badge.testing {
+                background: rgba(96, 165, 250, 0.2);
+                color: var(--color-accent);
+            }
+
+            .status-badge.success {
+                background: rgba(52, 211, 153, 0.2);
+                color: var(--color-status-active);
+            }
+
+            .status-badge.error {
+                background: rgba(248, 113, 113, 0.2);
+                color: var(--color-status-inactive);
+            }
+
+            .latency-display {
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: var(--color-accent);
+                margin-bottom: 12px;
+            }
+
+            .response-container {
+                background: var(--color-surface);
+                border: 1px solid var(--color-border);
+                border-radius: 8px;
+                padding: 12px;
+                max-height: 200px;
+                overflow-y: auto;
+                font-size: 0.9rem;
+                color: var(--color-text-muted);
+                white-space: pre-wrap;
+                word-break: break-word;
+                min-height: 60px;
+            }
+
+            .response-container:empty::before {
+                content: 'Waiting for response...';
+                color: var(--color-text-muted);
+                opacity: 0.5;
+            }
+
+            .error-text {
+                color: var(--color-status-inactive);
+                font-size: 0.85rem;
+                margin-top: 8px;
+            }
+
+            .spinner {
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(148, 163, 184, 0.2);
+                border-top: 2px solid var(--color-accent);
+                border-radius: 50%;
+                animation: spin 1s linear infinite;
+            }
+
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+
+            @media (max-width: 768px) {
+                .models-grid {
+                    grid-template-columns: 1fr;
+                }
+                
+                .test-header h1 {
+                    font-size: 1.8rem;
+                }
+
+                .control-row {
+                    flex-direction: column;
+                }
+
+                .control-field {
+                    min-width: 100%;
+                }
+            }
+        </style>
+    </head>
+    <body data-theme="dark-default">
+        <div id="root"></div>
+        <script type="module" src="/test.jsx"></script>
+    </body>
+</html>

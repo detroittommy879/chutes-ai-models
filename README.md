@@ -42,19 +42,32 @@ This enhanced version uses the `/chutes/` endpoint which:
    PORT=3000
    ```
 
-3. **Start the server:**
+3. **Start the development server:**
    ```bash
+   # Terminal 1: Start the backend server
    npm start
+
+   # Terminal 2: Start Vite dev server
+   npm run dev
    ```
 
 4. **Open in browser:**
-   Navigate to `http://localhost:3000`
+   - Main explorer: `http://localhost:5173`
+   - Model latency tester: `http://localhost:5173/test.html`
 
 ## Security Note
 
 ⚠️ **IMPORTANT**: This version includes a Node.js backend server to keep your API key secure. Never expose your API key in client-side JavaScript!
 
 ## Features
+
+### Model Latency Tester 🧪
+- **Test top 10 models** for response time
+- Real-time latency measurements in milliseconds
+- View actual responses from each model
+- Compare model performance side-by-side
+- Summary statistics (success rate, average latency)
+- Uses your API key from `.env` file (secure)
 
 ### Smart Caching System 💾
 - **3-10 minute cache** for API responses

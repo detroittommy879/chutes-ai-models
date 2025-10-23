@@ -349,6 +349,134 @@ app.get('/api/cache/status', async (req, res) => {
     }
 });
 
+// API endpoint to export raw data from all sources
+app.get('/api/export/data', async (req, res) => {
+    try {
+        const exportData = {
+            timestamp: new Date().toISOString(),
+            sources: {
+                chutesApi: null,
+                v1Api: null,
+                mergeAnalysis: null
+            }
+        };
+
+        // Get Chutes API data
+        try {
+            const chutesCache = await getCachedData('models_p0_l1000_tnull_nnull_pubtrue.json');
+            if (chutesCache) {
+                exportData.sources.chutesApi = {
+                    source: 'https://api.chutes.ai/chutes/',
+                    requiresAuth: true,
+                    modelCount: chutesCache.items?.length || 0,
+                    data: chutesCache
+                };
+            }
+        } catch (err) {
+            console.warn('Could not get Chutes API cache:', err.message);
+        }
+
+        // Get V1 API data
+        try {
+            const v1Cache = await getCachedData('v1_models_all.json');
+            if (v1Cache) {
+                exportData.sources.v1Api = {
+                    source: 'https://llm.chutes.ai/v1/models',
+                    requiresAuth: false,
+                    modelCount: v1Cache.data?.length || 0,
+                    data: v1Cache
+                };
+            }
+        } catch (err) {
+            console.warn('Could not get V1 API cache:', err.message);
+        }
+
+        // Generate merge analysis
+        if (exportData.sources.chutesApi && exportData.sources.v1Api) {
+            const chutesModels = exportData.sources.chutesApi.data.items || [];
+            const v1Models = exportData.sources.v1Api.data.data || [];
+            
+            const chutesNames = new Set(chutesModels.map(m => m.name));
+            const v1Names = new Set(v1Models.map(m => m.id));
+            
+            const matched = chutesModels.filter(m => v1Names.has(m.name)).length;
+            const onlyInChutes = chutesModels.filter(m => !v1Names.has(m.name)).map(m => m.name);
+            const onlyInV1 = v1Models.filter(m => !chutesNames.has(m.id)).map(m => m.id);
+            
+            exportData.sources.mergeAnalysis = {
+                totalInChutesApi: chutesModels.length,
+                totalInV1Api: v1Models.length,
+                matched: matched,
+                matchPercentage: ((matched / Math.min(chutesModels.length, v1Models.length)) * 100).toFixed(2) + '%',
+                onlyInChutesApi: onlyInChutes,
+                onlyInV1Api: onlyInV1,
+                dataGaps: {
+                    chutesApiMissing: ['modalities', 'context_length', 'max_output_length', 'quantization', 'supported_features'],
+                    v1ApiMissing: ['pricing_organization_specific', 'instances', 'deployment_status', 'gpu_allocation', 'invocation_count']
+                }
+            };
+        }
+
+        // Set response headers for file download
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="chutes-models-export-${Date.now()}.json"`);
+        
+        res.json(exportData);
+    } catch (error) {
+        console.error('Error exporting data:', error);
+        res.status(500).json({
+            error: 'Failed to export data',
+            message: error.message
+        });
+    }
+});
+
+// API endpoint to test a model (proxy to Chutes AI)
+app.post('/api/test-model', async (req, res) => {
+    try {
+        const { model, prompt, temperature = 0.7, max_tokens = 16000 } = req.body;
+
+        if (!model) {
+            return res.status(400).json({ error: 'Model ID is required' });
+        }
+
+        if (!prompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        console.log(`🧪 Testing model: ${model}`);
+
+        const response = await fetch('https://llm.chutes.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${CHUTES_API_KEY}`
+            },
+            body: JSON.stringify({
+                model,
+                messages: [{ role: 'user', content: prompt }],
+                temperature,
+                max_tokens
+            })
+        });
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+            console.error('API Error Response:', JSON.stringify(responseData, null, 2));
+            throw new Error(responseData.error?.message || `HTTP ${response.status}`);
+        }
+
+        res.json(responseData);
+    } catch (error) {
+        console.error('Error testing model:', error);
+        res.status(500).json({
+            error: 'Failed to test model',
+            message: error.message
+        });
+    }
+});
+
 // Serve the main page
 app.get('/', (req, res) => {
     const htmlFile = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
