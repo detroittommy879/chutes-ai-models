@@ -297,13 +297,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Template</span>
                 <span class="sort-indicator ${currentSort.column === 'template' ? 'active' : ''}">${getSortIcon('template')}</span>
             </div>
-            <div class="header-cell" data-column="modalities">
-                <span>Input → Output</span>
-                <span class="sort-indicator ${currentSort.column === 'modalities' ? 'active' : ''}">${getSortIcon('modalities')}</span>
+            <div class="header-cell" data-column="input_modalities">
+                <span>Input Modalities</span>
+                <span class="sort-indicator ${currentSort.column === 'input_modalities' ? 'active' : ''}">${getSortIcon('input_modalities')}</span>
             </div>
-            <div class="header-cell" data-column="context">
-                <span>Context</span>
-                <span class="sort-indicator ${currentSort.column === 'context' ? 'active' : ''}">${getSortIcon('context')}</span>
+            <div class="header-cell" data-column="output_modalities">
+                <span>Output Modalities</span>
+                <span class="sort-indicator ${currentSort.column === 'output_modalities' ? 'active' : ''}">${getSortIcon('output_modalities')}</span>
+            </div>
+            <div class="header-cell" data-column="input_context">
+                <span>Input Ctx</span>
+                <span class="sort-indicator ${currentSort.column === 'input_context' ? 'active' : ''}">${getSortIcon('input_context')}</span>
+            </div>
+            <div class="header-cell" data-column="output_context">
+                <span>Output Ctx</span>
+                <span class="sort-indicator ${currentSort.column === 'output_context' ? 'active' : ''}">${getSortIcon('output_context')}</span>
+            </div>
+            <div class="header-cell" data-column="visibility">
+                <span>Visibility</span>
+                <span class="sort-indicator ${currentSort.column === 'visibility' ? 'active' : ''}">${getSortIcon('visibility')}</span>
+            </div>
+            <div class="header-cell" data-column="sampling">
+                <span>Features</span>
+                <span class="sort-indicator ${currentSort.column === 'sampling' ? 'active' : ''}">${getSortIcon('sampling')}</span>
             </div>
             <div class="header-cell" data-column="quantization">
                 <span>Quant</span>
@@ -423,13 +439,24 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="model-cell template">
                 <span class="template-badge ${template}">${template.toUpperCase()}</span>
             </div>
-            <div class="model-cell modalities">
-                <small>${modalityDisplay}</small>
-                ${supportedFeatures.length > 0 ? `<div class="features-mini">${supportedFeatures.slice(0, 2).map(f => `<span class="feature-mini">${formatFeatureName(f)}</span>`).join('')}</div>` : ''}
+            <div class="model-cell input-modalities">
+                <small>${inputModalities.length ? inputModalities.map(m => `<span class="modality-badge ${getModalityClass(m)}">${m}</span>`).join(' ') : '<span style="color: #999;">N/A</span>'}</small>
             </div>
-            <div class="model-cell context" title="${inputContext ? formatNumber(inputContext) + ' in, ' : ''}${outputContext ? formatNumber(outputContext) + ' out' : ''}">
-                ${inputContext ? `<span title='Input context'>${formatNumber(inputContext)} in</span>` : '<span style="color: #999;">N/A</span>'}
-                ${outputContext ? `<span title='Output context'> / ${formatNumber(outputContext)} out</span>` : ''}
+            <div class="model-cell output-modalities">
+                <small>${outputModalities.length ? outputModalities.map(m => `<span class="modality-badge ${getModalityClass(m)}">${m}</span>`).join(' ') : '<span style="color: #999;">N/A</span>'}</small>
+            </div>
+            <div class="model-cell input-context" title="${inputContext !== null ? formatNumber(inputContext) : 'N/A'}">
+                ${inputContext !== null ? `<span>${formatNumber(inputContext)}</span>` : '<span style="color: #999;">N/A</span>'}
+            </div>
+            <div class="model-cell output-context" title="${outputContext !== null ? formatNumber(outputContext) : 'N/A'}">
+                ${outputContext !== null ? `<span>${formatNumber(outputContext)}</span>` : '<span style="color: #999;">N/A</span>'}
+            </div>
+            <div class="model-cell visibility">
+                <span>${model.public === true ? 'Public' : (model.public === false ? 'Private' : 'Unknown')}</span>
+            </div>
+            <div class="model-cell features">
+                ${supportedFeatures.length > 0 ? `<div class="features-mini">${supportedFeatures.map(f => `<span class="feature-mini">${formatFeatureName(f)}</span>`).join('')}</div>` : ''}
+                ${Array.isArray(v1Model?.supported_sampling_parameters) ? `<span class="sampling-badge" title="${v1Model.supported_sampling_parameters.join(', ')}">${v1Model.supported_sampling_parameters.length} Sampling Params</span>` : ''}
             </div>
             <div class="model-cell quantization" title="${quantization || 'N/A'}">
                 ${quantization ? `<span class="quant-badge">${escapeHtml(quantization)}</span>` : '<span style="color: #999;">N/A</span>'}
@@ -570,6 +597,92 @@ document.addEventListener('DOMContentLoaded', function() {
                     aVal = a.hot ? 1 : 0;
                     bVal = b.hot ? 1 : 0;
                     return direction === 'asc' ? aVal - bVal : bVal - aVal;
+
+                // New columns for enhanced sorting
+                case 'input_modalities':
+                    try {
+                        const getInputModalities = (model) => {
+                            const v1Model = v1ModelsMap.get(model.name);
+                            return v1Model?.input_modalities?.join(',') || '';
+                        };
+                        aVal = getInputModalities(a);
+                        bVal = getInputModalities(b);
+                        return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    } catch (err) {
+                        console.error('Error sorting input_modalities:', err);
+                        return 0;
+                    }
+
+                case 'output_modalities':
+                    try {
+                        const getOutputModalities = (model) => {
+                            const v1Model = v1ModelsMap.get(model.name);
+                            return v1Model?.output_modalities?.join(',') || '';
+                        };
+                        aVal = getOutputModalities(a);
+                        bVal = getOutputModalities(b);
+                        return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+                    } catch (err) {
+                        console.error('Error sorting output_modalities:', err);
+                        return 0;
+                    }
+
+                case 'input_context':
+                    try {
+                        const getInputContext = (model) => {
+                            const v1Model = v1ModelsMap.get(model.name);
+                            return v1Model?.context_length ?? 0;
+                        };
+                        aVal = getInputContext(a);
+                        bVal = getInputContext(b);
+                        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    } catch (err) {
+                        console.error('Error sorting input_context:', err);
+                        return 0;
+                    }
+
+                case 'output_context':
+                    try {
+                        const getOutputContext = (model) => {
+                            const v1Model = v1ModelsMap.get(model.name);
+                            return v1Model?.max_output_length ?? 0;
+                        };
+                        aVal = getOutputContext(a);
+                        bVal = getOutputContext(b);
+                        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    } catch (err) {
+                        console.error('Error sorting output_context:', err);
+                        return 0;
+                    }
+
+                case 'visibility':
+                    try {
+                        const getVisibility = (model) => {
+                            if (model.public === true) return 2;
+                            if (model.public === false) return 1;
+                            return 0; // Unknown
+                        };
+                        aVal = getVisibility(a);
+                        bVal = getVisibility(b);
+                        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    } catch (err) {
+                        console.error('Error sorting visibility:', err);
+                        return 0;
+                    }
+
+                case 'sampling':
+                    try {
+                        const getSamplingCount = (model) => {
+                            const v1Model = v1ModelsMap.get(model.name);
+                            return Array.isArray(v1Model?.supported_sampling_parameters) ? v1Model.supported_sampling_parameters.length : 0;
+                        };
+                        aVal = getSamplingCount(a);
+                        bVal = getSamplingCount(b);
+                        return direction === 'asc' ? aVal - bVal : bVal - aVal;
+                    } catch (err) {
+                        console.error('Error sorting sampling:', err);
+                        return 0;
+                    }
 
                 default:
                     return 0;

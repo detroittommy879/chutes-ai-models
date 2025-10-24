@@ -7,7 +7,7 @@ The Chutes Models Enhanced application uses **3 distinct data sources** that wor
 ### 1. **Chutes API** (`https://api.chutes.ai/chutes/`)
 - **Requires:** API key authentication
 - **Provides:** Organization-specific model deployments, pricing, instance status, GPU allocations, usage stats
-- **Models:** ~50-150 (your organization's models)
+- **Models:** ?
 - **Data Focus:** Business/Operations (What's deployed, how much it costs, how popular it is)
 
 ### 2. **V1 Models API** (`https://llm.chutes.ai/v1/models`)
@@ -16,11 +16,11 @@ The Chutes Models Enhanced application uses **3 distinct data sources** that wor
 - **Models:** ~100-300+ (comprehensive catalog including image, embedding, vision models)
 - **Data Focus:** Technical (What can the model do, its limits, what it supports)
 
-### 3. **Individual Model Endpoint** (`https://api.chutes.ai/chutes/{chute_id}`)
+### 3. **Individual Model Endpoint** (`https://api.chutes.ai/chutes/d126b161-3e52-50d3-a3c7-922bf3ffe77a`)
 - **Requires:** API key authentication
 - **Provides:** Detailed info for a specific model deployment
 - **Usage:** Currently not used in UI (available for future enhancements)
-
+https://chutes.ai/app/chute/25f25a8a-7e77-548b-ba76-a592eab45233
 ---
 
 ## Key Findings
