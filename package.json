@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node server.js",
-    "server": "nodemon server.js",
+    "server": "nodemon --config nodemon.json server.js",
     "dev:all": "concurrently \"npm run server\" \"npm run dev\""
   },
   "keywords": [

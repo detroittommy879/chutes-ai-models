@@ -230,7 +230,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get cache information from headers
             const cacheStatus = response.headers.get('X-Cache');
             const cacheAge = response.headers.get('X-Cache-Age');
-            updateCacheStatus(cacheStatus, cacheAge);
+            const cacheDate = response.headers.get('X-Cache-Date');
+            console.log('Cache headers:', { cacheStatus, cacheAge, cacheDate });
+            updateCacheStatus(cacheStatus, cacheAge, cacheDate);
 
             const data = await response.json();
             fullModelsList = data.items || [];
@@ -446,6 +448,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <small>${outputModalities.length ? outputModalities.map(m => `<span class="modality-badge ${getModalityClass(m)}">${m}</span>`).join(' ') : '<span style="color: #999;">N/A</span>'}</small>
             </div>
             <div class="model-cell input-context" title="${inputContext !== null ? formatNumber(inputContext) : 'N/A'}">
+                ${getVerificationBadge(name, inputContext)}
                 ${inputContext !== null ? `<span>${formatNumber(inputContext)}</span>` : '<span style="color: #999;">N/A</span>'}
             </div>
             <div class="model-cell output-context" title="${outputContext !== null ? formatNumber(outputContext) : 'N/A'}">
@@ -693,22 +696,55 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Update cache status display
-    function updateCacheStatus(cacheStatus, cacheAge) {
+    function updateCacheStatus(cacheStatus, cacheAge, cacheDate) {
         const cacheStatusEl = document.getElementById('cacheStatus');
         const cacheInfoEl = document.getElementById('cacheInfo');
         
         if (cacheStatus === 'HIT') {
             cacheStatusEl.style.display = 'flex';
-            cacheInfoEl.textContent = `Cached (${cacheAge}s old)`;
+            
+            // Format cache date with simple time
+            let dateStr = '';
+            if (cacheDate) {
+                const date = new Date(cacheDate);
+                const dateOnly = date.toLocaleDateString();
+                const hours = date.getHours();
+                const ampm = hours >= 12 ? 'pm' : 'am';
+                const hour12 = hours % 12 || 12;
+                const simpleTime = `${hour12}${ampm}`;
+                dateStr = `${dateOnly} ${simpleTime}`;
+            } else {
+                dateStr = 'Unknown date';
+            }
+            
+            // Convert seconds to human readable
+            const ageSeconds = parseInt(cacheAge) || 0;
+            const ageMinutes = Math.floor(ageSeconds / 60);
+            const ageHours = Math.floor(ageMinutes / 60);
+            const ageDays = Math.floor(ageHours / 24);
+            
+            let ageStr = '';
+            if (ageDays > 0) {
+                ageStr = `${ageDays} day${ageDays !== 1 ? 's' : ''} old`;
+            } else if (ageHours > 0) {
+                ageStr = `${ageHours} hour${ageHours !== 1 ? 's' : ''} old`;
+            } else if (ageMinutes > 0) {
+                ageStr = `${ageMinutes} min old`;
+            } else {
+                ageStr = `${ageSeconds}s old`;
+            }
+            
+            cacheInfoEl.innerHTML = `${dateStr}<br><small>(${ageStr})</small>`;
             cacheInfoEl.style.color = '#4caf50';
         } else if (cacheStatus === 'MISS') {
             cacheStatusEl.style.display = 'flex';
-            cacheInfoEl.textContent = 'Fresh';
+            cacheInfoEl.innerHTML = 'Fresh data';
             cacheInfoEl.style.color = '#ff9800';
-            // Hide after 3 seconds
-            setTimeout(() => {
-                cacheStatusEl.style.display = 'none';
-            }, 3000);
+        } else {
+            // No cache status - probably loading
+            cacheStatusEl.style.display = 'flex';
+            cacheInfoEl.innerHTML = 'Loading...';
+            cacheInfoEl.style.color = '#999';
         }
     }
 
@@ -753,6 +789,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function formatFeatureName(feature) {
         return feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    // Generate verification badge for tested models
+    function getVerificationBadge(modelName, inputContext) {
+        const testResult = tokenTestResults[modelName];
+        
+        if (!testResult || testResult.status !== 'success') {
+            return '';
+        }
+
+        const testDate = new Date(testResult.lastTested);
+        const dateStr = testDate.toLocaleDateString();
+        const timeStr = testDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const tooltipText = `Verified: ${dateStr} ${timeStr}
+Input: ${testResult.inputTokens || testResult.tokenCount || 'N/A'} tokens
+File: ${testResult.tokenFile || 'N/A'}
+Context: ${formatNumber(testResult.inputContext || inputContext)}`;
+
+        return `<span class="verification-badge" title="${tooltipText}">✓ Verified</span>`;
     }
 
     // UI state management
@@ -831,16 +887,65 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectTop10Btn = document.getElementById('selectTop10Btn');
     const clearSelectionBtn = document.getElementById('clearSelectionBtn');
     const runLatencyTestBtn = document.getElementById('runLatencyTestBtn');
+    const runTokenTestBtn = document.getElementById('runTokenTestBtn');
     const testPromptInput = document.getElementById('testPrompt');
     const latencyResults = document.getElementById('latencyResults');
 
     let selectedForTest = new Set();
     let testingInProgress = false;
+    let availableTokenFiles = [];
+    let tokenTestResults = {}; // Store loaded test results
 
     // Show latency tester when models are loaded
     function showLatencyTester() {
         if (latencyTester && allModels.length > 0) {
             latencyTester.style.display = 'block';
+        }
+    }
+
+    // Load available token files
+    async function loadTokenFiles() {
+        try {
+            const response = await fetch('/api/token-files');
+            if (response.ok) {
+                const data = await response.json();
+                availableTokenFiles = data.files;
+                console.log('📁 Available token files:', availableTokenFiles);
+            }
+        } catch (error) {
+            console.warn('Could not load token files:', error);
+        }
+    }
+
+    // Load token test results
+    async function loadTokenTestResults() {
+        try {
+            const response = await fetch('/api/token-test-results');
+            if (response.ok) {
+                tokenTestResults = await response.json();
+                console.log('✅ Loaded token test results for', Object.keys(tokenTestResults).length, 'models');
+            }
+        } catch (error) {
+            console.warn('Could not load token test results:', error);
+        }
+    }
+
+    // Save token test result
+    async function saveTokenTestResult(modelName, result) {
+        try {
+            const response = await fetch('/api/token-test-results', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modelName, result })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                tokenTestResults[modelName] = data.result;
+                console.log('💾 Saved token test result for', modelName);
+            }
+        } catch (error) {
+            console.warn('Could not save token test result:', error);
         }
     }
 
@@ -881,6 +986,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const count = selectedForTest.size;
         runLatencyTestBtn.textContent = `Run Test (${count} selected)`;
         runLatencyTestBtn.disabled = count === 0 || testingInProgress;
+        runTokenTestBtn.textContent = `Run Token Test (${count} selected)`;
+        runTokenTestBtn.disabled = count === 0 || testingInProgress;
     }
 
     selectAllTestBtn.addEventListener('click', () => {
@@ -909,6 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         testingInProgress = true;
         runLatencyTestBtn.disabled = true;
+        runTokenTestBtn.disabled = true;
         runLatencyTestBtn.textContent = 'Testing...';
 
         const testPrompt = testPromptInput.value.trim() || 'Write a haiku about programming.';
@@ -938,6 +1046,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
         testingInProgress = false;
         updateTestButton();
+    });
+
+    runTokenTestBtn.addEventListener('click', async () => {
+        if (testingInProgress || selectedForTest.size === 0) return;
+
+        testingInProgress = true;
+        runLatencyTestBtn.disabled = true;
+        runTokenTestBtn.disabled = true;
+        runTokenTestBtn.textContent = 'Token Testing...';
+
+        // Get models by their names from the selected set
+        const modelsToTest = Array.from(selectedForTest)
+            .map(modelName => allModels.find(m => m.name === modelName))
+            .filter(m => m && (m.standard_template === 'vllm' || m.standard_template === 'tgi'));
+
+        if (modelsToTest.length === 0) {
+            alert('No valid text generation models selected. Please select VLLM or TGI models.');
+            testingInProgress = false;
+            updateTestButton();
+            return;
+        }
+
+        // Clear previous results
+        latencyResults.innerHTML = '<div style="color: var(--color-text); margin-bottom: 1rem;">Token testing in progress...</div>';
+
+        const results = [];
+
+        for (const model of modelsToTest) {
+            const result = await testModelWithTokenFile(model);
+            results.push(result);
+            
+            // Save successful test results
+            if (result.status === 'success') {
+                await saveTokenTestResult(result.name, {
+                    status: result.status,
+                    latency: result.latency,
+                    tokenFile: result.tokenFile,
+                    tokenCount: result.inputTokens,
+                    inputContext: result.inputContext,
+                    inputTokens: result.usage.prompt_tokens,
+                    outputTokens: result.usage.completion_tokens,
+                    totalTokens: result.usage.total_tokens
+                });
+            }
+            
+            displayLatencyResults(results);
+        }
+
+        testingInProgress = false;
+        updateTestButton();
+        
+        // Refresh the model display to show new verification badges
+        displayModels({ items: allModels, total: totalModels });
     });
 
     async function testModelLatency(model, prompt) {
@@ -994,6 +1155,131 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Select appropriate token file based on model's input context
+    function selectTokenFile(inputContext) {
+        if (!inputContext || availableTokenFiles.length === 0) {
+            console.warn('No input context or no token files available');
+            return null;
+        }
+
+        // We need to leave room for the output tokens (max_tokens parameter)
+        // Typical max_tokens is 4000-16000, so we'll be conservative and reserve 20k tokens
+        const RESERVED_OUTPUT_TOKENS = 20000;
+        const maxInputTokens = inputContext - RESERVED_OUTPUT_TOKENS;
+
+        // Find the largest token file that's smaller than the adjusted limit
+        const suitableFiles = availableTokenFiles.filter(f => f.tokenCount < maxInputTokens);
+        
+        if (suitableFiles.length === 0) {
+            // If no suitable file found, use the smallest one
+            console.warn(`No token file smaller than ${maxInputTokens} (context: ${inputContext} - ${RESERVED_OUTPUT_TOKENS}), using smallest available`);
+            return availableTokenFiles[0];
+        }
+
+        // Return the largest file that's still smaller than the adjusted context
+        const selectedFile = suitableFiles[suitableFiles.length - 1];
+        console.log(`Selected ${selectedFile.filename} (${selectedFile.tokenCount} tokens) for context ${inputContext} (max input: ${maxInputTokens})`);
+        return selectedFile;
+    }
+
+    async function testModelWithTokenFile(model) {
+        const startTime = performance.now();
+        
+        try {
+            // Get model's input context from v1 data
+            const v1Model = v1ModelsMap.get(model.name);
+            const inputContext = v1Model?.context_length;
+
+            if (!inputContext) {
+                return {
+                    name: model.name,
+                    status: 'error',
+                    latency: 0,
+                    error: 'Model has no input context information'
+                };
+            }
+
+            // Select appropriate token file
+            const tokenFile = selectTokenFile(inputContext);
+            
+            if (!tokenFile) {
+                return {
+                    name: model.name,
+                    status: 'error',
+                    latency: 0,
+                    error: 'No suitable token file found'
+                };
+            }
+
+            console.log(`📄 Testing ${model.name} (context: ${inputContext}) with ${tokenFile.filename} (${tokenFile.tokenCount} tokens)`);
+
+            // Fetch the token file content
+            const tokenResponse = await fetch(tokenFile.path);
+            if (!tokenResponse.ok) {
+                throw new Error('Failed to load token file');
+            }
+            const tokenContent = await tokenResponse.text();
+
+            // Test the model with the token content
+            const response = await fetch('/api/test-model', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: model.name,
+                    prompt: tokenContent,
+                    max_tokens: 1000,  // Use smaller max_tokens for token tests to avoid exceeding context
+                    testType: 'token'
+                })
+            });
+
+            const endTime = performance.now();
+            const latency = Math.round(endTime - startTime);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                return {
+                    name: model.name,
+                    status: 'error',
+                    latency: latency,
+                    error: errorData.error || 'Request failed',
+                    tokenFile: tokenFile.filename,
+                    inputContext: inputContext
+                };
+            }
+
+            const data = await response.json();
+            const content = data.choices?.[0]?.message?.content || '(Empty response)';
+            const usage = data.usage || {};
+
+            return {
+                name: model.name,
+                status: 'success',
+                latency: latency,
+                response: content,
+                usage: {
+                    prompt_tokens: usage.prompt_tokens || 0,
+                    completion_tokens: usage.completion_tokens || 0,
+                    total_tokens: usage.total_tokens || 0
+                },
+                tokenFile: tokenFile.filename,
+                inputContext: inputContext,
+                inputTokens: tokenFile.tokenCount
+            };
+        } catch (error) {
+            const endTime = performance.now();
+            const latency = Math.round(endTime - startTime);
+            
+            return {
+                name: model.name,
+                status: 'error',
+                latency: latency,
+                error: error.message,
+                tokenFile: tokenFile?.filename,
+                inputContext: inputContext
+            };
+        }
+    }
+
     function displayLatencyResults(results) {
         console.log('Displaying results for', results.length, 'models');
         
@@ -1036,6 +1322,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             ` : ''}
                         </div>
                     </div>
+                    ${result.tokenFile ? `
+                        <div style="color: var(--color-accent); font-size: 0.85rem; margin-top: 0.5rem; padding: 0.5rem; background: var(--color-bg); border-radius: 4px;">
+                            📄 <strong>Token Test:</strong> Used ${result.tokenFile} | Model Context: ${formatNumber(result.inputContext)}
+                        </div>
+                    ` : ''}
                     ${result.error ? `<div style="color: var(--color-error); font-size: 0.9rem; margin-top: 0.5rem;">❌ Error: ${result.error}</div>` : ''}
                     ${result.usage ? `
                         <div style="color: var(--color-text-muted); font-size: 0.85rem; margin-top: 0.5rem; padding: 0.5rem; background: var(--color-bg); border-radius: 4px;">
@@ -1058,6 +1349,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initial load - fetch v1 models first for modality info
     fetchV1Models().then(() => {
+        // Load token files for token testing
+        loadTokenFiles();
+        // Load existing token test results
+        loadTokenTestResults();
         fetchModels();
     });
 });

@@ -20,7 +20,10 @@ const cacheTracker = new Map();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Increase JSON body size limit to handle large token files (up to 2MB)
+app.use(express.json({ limit: '2mb' }));
+// Also handle text payloads with increased limit
+app.use(express.text({ limit: '2mb' }));
 
 // Serve static files from dist in production, public in development
 const staticDir = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
@@ -115,39 +118,12 @@ async function setCachedData(cacheKey, data) {
     }
 }
 
-// Clean up old cache files periodically
+// Note: Cache cleanup disabled - files are kept permanently for offline access
+// Cache files will show age to users so they know how old the data is
 async function cleanupCache() {
-    try {
-        const files = await fs.readdir(CACHE_DIR);
-        const now = Date.now();
-        let cleanedCount = 0;
-
-        for (const file of files) {
-            if (!file.endsWith('.json')) continue;
-            
-            const filePath = path.join(CACHE_DIR, file);
-            try {
-                const content = await fs.readFile(filePath, 'utf8');
-                const cached = JSON.parse(content);
-                const age = now - cached.timestamp;
-                
-                if (age > CACHE_DURATION) {
-                    await fs.unlink(filePath);
-                    cleanedCount++;
-                }
-            } catch (err) {
-                // If we can't read it, delete it
-                await fs.unlink(filePath).catch(() => {});
-                cleanedCount++;
-            }
-        }
-
-        if (cleanedCount > 0) {
-            console.log(`🧹 Cleaned up ${cleanedCount} old cache file(s)`);
-        }
-    } catch (err) {
-        console.error('Cache cleanup error:', err);
-    }
+    // Cleanup disabled - cache files are kept indefinitely
+    // This allows the app to work offline or when API is down
+    console.log('💾 Cache cleanup disabled - files kept for offline access');
 }
 
 // Check if API key is configured
@@ -157,11 +133,129 @@ if (!CHUTES_API_KEY) {
     process.exit(1);
 }
 
+// Token test results storage
+const TOKEN_TEST_RESULTS_FILE = path.join(__dirname, 'cache', 'token_test_results.json');
+
+// Rate limiting storage
+const RATE_LIMITS_FILE = path.join(__dirname, 'cache', 'rate_limits.json');
+
+// Load token test results
+async function loadTokenTestResults() {
+    try {
+        const content = await fs.readFile(TOKEN_TEST_RESULTS_FILE, 'utf8');
+        return JSON.parse(content);
+    } catch (err) {
+        // File doesn't exist yet, return empty object
+        return {};
+    }
+}
+
+// Save token test results
+async function saveTokenTestResults(results) {
+    try {
+        await fs.writeFile(TOKEN_TEST_RESULTS_FILE, JSON.stringify(results, null, 2), 'utf8');
+        console.log('💾 Token test results saved');
+    } catch (err) {
+        console.error('Failed to save token test results:', err);
+    }
+}
+
+// Load rate limits
+async function loadRateLimits() {
+    try {
+        const content = await fs.readFile(RATE_LIMITS_FILE, 'utf8');
+        const data = JSON.parse(content);
+        
+        // Check if we need to reset daily counters (midnight UTC)
+        const now = new Date();
+        const lastReset = new Date(data.lastDailyReset || 0);
+        const resetNeeded = now.getUTCDate() !== lastReset.getUTCDate() || 
+                           now.getUTCMonth() !== lastReset.getUTCMonth() || 
+                           now.getUTCFullYear() !== lastReset.getUTCFullYear();
+        
+        if (resetNeeded) {
+            console.log('🌅 Resetting daily rate limits (midnight UTC)');
+            data.dailyTokenTests = 0;
+            data.dailyLatencyTests = 0;
+            data.lastDailyReset = now.toISOString();
+        }
+        
+        return data;
+    } catch (err) {
+        // File doesn't exist yet, return default structure
+        const now = new Date();
+        return {
+            weeklyTokenTests: {}, // modelName -> lastTestTimestamp
+            dailyTokenTests: 0,
+            dailyLatencyTests: 0,
+            lastDailyReset: now.toISOString()
+        };
+    }
+}
+
+// Save rate limits
+async function saveRateLimits(limits) {
+    try {
+        await fs.writeFile(RATE_LIMITS_FILE, JSON.stringify(limits, null, 2), 'utf8');
+        console.log('💾 Rate limits saved');
+    } catch (err) {
+        console.error('Failed to save rate limits:', err);
+    }
+}
+
+// Check if token test is allowed for a model
+async function checkTokenTestLimits(modelName) {
+    const limits = await loadRateLimits();
+    const now = new Date();
+    
+    // Check weekly limit per model
+    const lastTest = limits.weeklyTokenTests[modelName];
+    if (lastTest) {
+        const lastTestDate = new Date(lastTest);
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        if (lastTestDate > weekAgo) {
+            return { allowed: false, reason: 'Model was tested within the last week' };
+        }
+    }
+    
+    // Check daily limit
+    if (limits.dailyTokenTests >= 10) {
+        return { allowed: false, reason: 'Daily token test limit (10) reached' };
+    }
+    
+    return { allowed: true };
+}
+
+// Check if latency test is allowed
+async function checkLatencyTestLimits() {
+    const limits = await loadRateLimits();
+    
+    // Check daily limit
+    if (limits.dailyLatencyTests >= 10) {
+        return { allowed: false, reason: 'Daily latency test limit (10) reached' };
+    }
+    
+    return { allowed: true };
+}
+
+// Update rate limits after successful test
+async function updateRateLimits(testType, modelName = null) {
+    const limits = await loadRateLimits();
+    
+    if (testType === 'token') {
+        limits.dailyTokenTests++;
+        if (modelName) {
+            limits.weeklyTokenTests[modelName] = new Date().toISOString();
+        }
+    } else if (testType === 'latency') {
+        limits.dailyLatencyTests++;
+    }
+    
+    await saveRateLimits(limits);
+}
+
 // Initialize
 initCache();
-
-// Run cache cleanup every 5 minutes
-setInterval(cleanupCache, 5 * 60 * 1000);
 
 // API endpoint to fetch models (with caching)
 app.get('/api/models', async (req, res) => {
@@ -182,8 +276,13 @@ app.get('/api/models', async (req, res) => {
         const cachedData = await getCachedData(cacheKey);
         if (cachedData) {
             // Add cache info to response headers
+            const cacheTimestamp = cacheTracker.get(cacheKey)?.timestamp || Date.now();
+            const cacheAge = Math.round((Date.now() - cacheTimestamp) / 1000);
+            const cacheDate = new Date(cacheTimestamp).toISOString();
+            
             res.set('X-Cache', 'HIT');
-            res.set('X-Cache-Age', Math.round((Date.now() - cacheTracker.get(cacheKey)?.timestamp || 0) / 1000));
+            res.set('X-Cache-Age', cacheAge);
+            res.set('X-Cache-Date', cacheDate);
             return res.json(cachedData);
         }
 
@@ -242,7 +341,13 @@ app.get('/api/models/v1/all', async (req, res) => {
         // Try to get cached data
         const cachedData = await getCachedData(cacheKey);
         if (cachedData) {
+            const cacheTimestamp = cacheTracker.get(cacheKey)?.timestamp || Date.now();
+            const cacheAge = Math.round((Date.now() - cacheTimestamp) / 1000);
+            const cacheDate = new Date(cacheTimestamp).toISOString();
+            
             res.set('X-Cache', 'HIT');
+            res.set('X-Cache-Age', cacheAge);
+            res.set('X-Cache-Date', cacheDate);
             return res.json(cachedData);
         }
 
@@ -431,10 +536,113 @@ app.get('/api/export/data', async (req, res) => {
     }
 });
 
+// API endpoint to get token test results
+app.get('/api/token-test-results', async (req, res) => {
+    try {
+        const results = await loadTokenTestResults();
+        res.json(results);
+    } catch (error) {
+        console.error('Error loading token test results:', error);
+        res.status(500).json({
+            error: 'Failed to load token test results',
+            message: error.message
+        });
+    }
+});
+
+// API endpoint to save token test result
+app.post('/api/token-test-results', async (req, res) => {
+    try {
+        const { modelName, result } = req.body;
+        
+        if (!modelName || !result) {
+            return res.status(400).json({ error: 'Model name and result are required' });
+        }
+
+        // Load existing results
+        const allResults = await loadTokenTestResults();
+        
+        // Add/update result for this model
+        allResults[modelName] = {
+            ...result,
+            lastTested: new Date().toISOString()
+        };
+        
+        // Save updated results
+        await saveTokenTestResults(allResults);
+        
+        res.json({ success: true, modelName, result: allResults[modelName] });
+    } catch (error) {
+        console.error('Error saving token test result:', error);
+        res.status(500).json({
+            error: 'Failed to save token test result',
+            message: error.message
+        });
+    }
+});
+
+// API endpoint to get available token files
+app.get('/api/token-files', async (req, res) => {
+    try {
+        const tokenFilesDir = path.join(__dirname, 'bigtokens', 'generated_tokens');
+        const files = await fs.readdir(tokenFilesDir);
+        
+        // Parse token files and extract token counts
+        const tokenFiles = files
+            .filter(f => f.startsWith('tokens_') && f.endsWith('.txt'))
+            .map(filename => {
+                // Extract token count from filename: tokens_125,000.txt -> 125000
+                const match = filename.match(/tokens_([\d,]+)\.txt/);
+                if (match) {
+                    const tokenCount = parseInt(match[1].replace(/,/g, ''));
+                    return {
+                        filename,
+                        tokenCount,
+                        path: `/api/token-files/${filename}`
+                    };
+                }
+                return null;
+            })
+            .filter(f => f !== null)
+            .sort((a, b) => a.tokenCount - b.tokenCount);
+
+        res.json({ files: tokenFiles });
+    } catch (error) {
+        console.error('Error listing token files:', error);
+        res.status(500).json({
+            error: 'Failed to list token files',
+            message: error.message
+        });
+    }
+});
+
+// API endpoint to serve a specific token file
+app.get('/api/token-files/:filename', async (req, res) => {
+    try {
+        const { filename } = req.params;
+        
+        // Validate filename to prevent directory traversal
+        if (!filename.match(/^tokens_[\d,]+\.txt$/)) {
+            return res.status(400).json({ error: 'Invalid filename' });
+        }
+
+        const filePath = path.join(__dirname, 'bigtokens', 'generated_tokens', filename);
+        const content = await fs.readFile(filePath, 'utf8');
+        
+        res.type('text/plain').send(content);
+    } catch (error) {
+        console.error('Error reading token file:', error);
+        res.status(404).json({
+            error: 'Token file not found',
+            message: error.message
+        });
+    }
+});
+
 // API endpoint to test a model (proxy to Chutes AI)
 app.post('/api/test-model', async (req, res) => {
     try {
-        const { model, prompt, temperature = 0.7, max_tokens = 16000 } = req.body;
+        const { model, prompt, temperature = 0.7, max_tokens = 1000, testType } = req.body;
 
         if (!model) {
             return res.status(400).json({ error: 'Model ID is required' });
@@ -444,7 +652,27 @@ app.post('/api/test-model', async (req, res) => {
             return res.status(400).json({ error: 'Prompt is required' });
         }
 
-        console.log(`🧪 Testing model: ${model}`);
+        if (!testType || !['latency', 'token'].includes(testType)) {
+            return res.status(400).json({ error: 'testType must be either "latency" or "token"' });
+        }
+
+        console.log(`🧪 Testing model: ${model} (${testType} test)`);
+
+        // Check rate limits
+        let limitCheck;
+        if (testType === 'token') {
+            limitCheck = await checkTokenTestLimits(model);
+        } else if (testType === 'latency') {
+            limitCheck = await checkLatencyTestLimits();
+        }
+
+        if (!limitCheck.allowed) {
+            console.log(`🚫 Rate limit exceeded for ${testType} test: ${limitCheck.reason}`);
+            return res.status(429).json({
+                error: 'Rate limit exceeded',
+                message: limitCheck.reason
+            });
+        }
 
         const response = await fetch('https://llm.chutes.ai/v1/chat/completions', {
             method: 'POST',
@@ -466,6 +694,10 @@ app.post('/api/test-model', async (req, res) => {
             console.error('API Error Response:', JSON.stringify(responseData, null, 2));
             throw new Error(responseData.error?.message || `HTTP ${response.status}`);
         }
+
+        // Update rate limits on successful test
+        await updateRateLimits(testType, testType === 'token' ? model : null);
+        console.log(`✅ ${testType} test successful for ${model}, rate limits updated`);
 
         res.json(responseData);
     } catch (error) {

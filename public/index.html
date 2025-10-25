@@ -136,6 +136,7 @@
                             <button id="selectTop10Btn" class="action-button" style="width: 100%;">Select Top 10</button>
                             <button id="clearSelectionBtn" class="ghost-button" style="width: 100%;">Clear Selection</button>
                             <button id="runLatencyTestBtn" class="action-button" style="width: 100%;" disabled>Run Test (0 selected)</button>
+                            <button id="runTokenTestBtn" class="action-button" style="width: 100%; background: var(--color-accent); border-color: var(--color-accent);" disabled>Run Token Test (0 selected)</button>
                         </div>
                     </div>
                     <div id="latencyResults" style="margin-top: 1rem;"></div>
@@ -165,9 +166,9 @@
                         <span class="stat-label">Page:</span>
                         <span class="stat-value" id="currentPage">1</span>
                     </div>
-                    <div class="stat-item cache-status" id="cacheStatus" style="display: none;">
+                    <div class="stat-item cache-status" id="cacheStatus">
                         <span class="stat-label">Cache:</span>
-                        <span class="stat-value" id="cacheInfo">-</span>
+                        <span class="stat-value" id="cacheInfo">Loading...</span>
                     </div>
                 </div>
 
