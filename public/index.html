@@ -1,202 +1,429 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <!-- Google Analytics -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-V8B90DGEJV"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() {
-                dataLayer.push(arguments);
-            }
-            gtag('js', new Date());
-            gtag('config', 'G-V8B90DGEJV');
-        </script>
+  <head>
+    <!-- Google Analytics -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-V8B90DGEJV"
+    ></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag("js", new Date());
+      gtag("config", "G-V8B90DGEJV");
+    </script>
 
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        
-        <!-- Primary Meta Tags -->
-        <title>Chutes AI Model Explorer - Enhanced | Browse All AI Models</title>
-        <meta name="title" content="Chutes AI Model Explorer - Enhanced | Browse All AI Models" />
-        <meta name="description" content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability for VLLM, ComfyUI, TGI, and custom models." />
-        <meta name="keywords" content="AI models, Chutes AI, VLLM, ComfyUI, TGI, AI model explorer, AI pricing, text generation, image generation, video generation, audio AI, machine learning models, LLM comparison" />
-        <meta name="author" content="wuu73.org" />
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://wuu73.org/chutes-models-enhanced/" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-        <!-- Open Graph / Facebook -->
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://wuu73.org/chutes-models-enhanced/" />
-        <meta property="og:title" content="Chutes AI Model Explorer - Enhanced | Browse All AI Models" />
-        <meta property="og:description" content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability." />
-        <meta property="og:image" content="https://wuu73.org/chutes-models-enhanced/og-image.png" />
-        <meta property="og:image:width" content="1200" />
-        <meta property="og:image:height" content="630" />
-        <meta property="og:site_name" content="Chutes AI Model Explorer" />
-        <meta property="og:locale" content="en_US" />
+    <!-- Primary Meta Tags -->
+    <title>Chutes AI Model Explorer - Enhanced | Browse All AI Models</title>
+    <meta
+      name="title"
+      content="Chutes AI Model Explorer - Enhanced | Browse All AI Models"
+    />
+    <meta
+      name="description"
+      content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability for VLLM, ComfyUI, TGI, and custom models."
+    />
+    <meta
+      name="keywords"
+      content="AI models, Chutes AI, VLLM, ComfyUI, TGI, AI model explorer, AI pricing, text generation, image generation, video generation, audio AI, machine learning models, LLM comparison"
+    />
+    <meta name="author" content="wuu73.org" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://wuu73.org/chutes-models-enhanced/" />
 
-        <!-- Twitter Card -->
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content="https://wuu73.org/chutes-models-enhanced/" />
-        <meta name="twitter:title" content="Chutes AI Model Explorer - Enhanced | Browse All AI Models" />
-        <meta name="twitter:description" content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability." />
-        <meta name="twitter:image" content="https://wuu73.org/chutes-models-enhanced/og-image.png" />
-        <meta name="twitter:creator" content="@wuu73" />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://wuu73.org/chutes-models-enhanced/"
+    />
+    <meta
+      property="og:title"
+      content="Chutes AI Model Explorer - Enhanced | Browse All AI Models"
+    />
+    <meta
+      property="og:description"
+      content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability."
+    />
+    <meta
+      property="og:image"
+      content="https://wuu73.org/chutes-models-enhanced/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="Chutes AI Model Explorer" />
+    <meta property="og:locale" content="en_US" />
 
-        <!-- Additional SEO Meta Tags -->
-        <meta name="theme-color" content="#060b16" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="format-detection" content="telephone=no" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:url"
+      content="https://wuu73.org/chutes-models-enhanced/"
+    />
+    <meta
+      name="twitter:title"
+      content="Chutes AI Model Explorer - Enhanced | Browse All AI Models"
+    />
+    <meta
+      name="twitter:description"
+      content="Explore and compare ALL AI models including text, image, video, and audio generation. View pricing, performance metrics, and real-time availability."
+    />
+    <meta
+      name="twitter:image"
+      content="https://wuu73.org/chutes-models-enhanced/og-image.png"
+    />
+    <meta name="twitter:creator" content="@wuu73" />
 
-        <!-- Favicon (add your favicon files) -->
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <!-- Additional SEO Meta Tags -->
+    <meta name="theme-color" content="#060b16" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="format-detection" content="telephone=no" />
 
-        <!-- Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
-            rel="stylesheet"
-        />
-        
-        <!-- Stylesheet -->
-        <link rel="stylesheet" href="styles.css" />
-    </head>
-    <body>
-        <div class="container">
-            <header>
-                <div class="header-bar">
-                    <h1>Chutes AI Model Explorer <span class="badge-enhanced">Enhanced</span></h1>
-                    <div class="header-actions">
-                        <label class="theme-selector-label" for="themeSelector">Theme</label>
-                        <select id="themeSelector" class="theme-selector">
-                            <option value="light-default">Light - Default</option>
-                            <option value="light-warm">Light - Warm</option>
-                            <option value="dark-default" selected>Dark - Default</option>
-                            <option value="dark-vibrant">Dark - Vibrant</option>
-                            <option value="dark-midnight">Dark - Midnight</option>
-                        </select>
-                    </div>
-                </div>
-                <p>Browse ALL AI models including text, image, video, and audio generation</p>
+    <!-- Favicon (add your favicon files) -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
-                <div class="controls">
-                    <div class="control-group">
-                        <label class="control-label" for="templateFilter">Template</label>
-                        <select id="templateFilter" class="control-input">
-                            <option value="">All Templates</option>
-                            <option value="vllm">VLLM (Text)</option>
-                            <option value="comfyui">ComfyUI (Image/Video)</option>
-                            <option value="tgi">TGI (Text)</option>
-                            <option value="custom">Custom</option>
-                        </select>
-                    </div>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap"
+      rel="stylesheet"
+    />
 
-                    <div class="control-group">
-                        <label class="control-label" for="nameSearch">Search Name</label>
-                        <input type="text" id="nameSearch" class="control-input" placeholder="Search by name..." />
-                    </div>
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="header-bar">
+          <h1>
+            Chutes AI Model Explorer
+            <span class="badge-enhanced">Enhanced</span>
+          </h1>
+          <div class="header-actions">
+            <label class="theme-selector-label" for="themeSelector"
+              >Theme</label
+            >
+            <select id="themeSelector" class="theme-selector">
+              <option value="light-default">Light - Default</option>
+              <option value="light-warm">Light - Warm</option>
+              <option value="dark-default" selected>Dark - Default</option>
+              <option value="dark-vibrant">Dark - Vibrant</option>
+              <option value="dark-midnight">Dark - Midnight</option>
+            </select>
+          </div>
+        </div>
+        <p>
+          Browse ALL AI models including text, image, video, and audio
+          generation
+        </p>
 
-                    <div class="control-group">
-                        <label class="control-label" for="limitSelect">Show</label>
-                        <select id="limitSelect" class="control-input">
-                            <option value="25">25 models</option>
-                            <option value="50">50 models</option>
-                            <option value="100">100 models</option>
-                            <option value="200">200 models</option>
-                            <option value="1000" selected>All models</option>
-                        </select>
-                    </div>
+        <div class="controls">
+          <div class="control-group">
+            <label class="control-label" for="templateFilter">Template</label>
+            <select id="templateFilter" class="control-input">
+              <option value="">All Templates</option>
+              <option value="vllm">VLLM (Text)</option>
+              <option value="comfyui">ComfyUI (Image/Video)</option>
+              <option value="tgi">TGI (Text)</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
 
-                    <button id="updateBtn" class="action-button">Update Models</button>
+          <div class="control-group">
+            <label class="control-label" for="nameSearch">Search Name</label>
+            <input
+              type="text"
+              id="nameSearch"
+              class="control-input"
+              placeholder="Search by name..."
+            />
+          </div>
 
-                    <div class="control-spacer" aria-hidden="true"></div>
+          <div class="control-group">
+            <label class="control-label" for="limitSelect">Show</label>
+            <select id="limitSelect" class="control-input">
+              <option value="25">25 models</option>
+              <option value="50">50 models</option>
+              <option value="100">100 models</option>
+              <option value="200">200 models</option>
+              <option value="1000" selected>All models</option>
+            </select>
+          </div>
 
-                    <button id="downloadCsvBtn" class="ghost-button" type="button">Download CSV</button>
-                    <button id="downloadMdBtn" class="ghost-button" type="button">Download Markdown</button>
-                </div>
+          <button id="updateBtn" class="action-button">Update Models</button>
 
-                <!-- Latency Testing Section -->
-                <div class="latency-tester" id="latencyTester" style="display: none;">
-                    <h2 style="margin-top: 2rem; margin-bottom: 1rem; color: var(--color-text);">🚀 Model Latency Tester</h2>
-                    <div class="test-controls" style="display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
-                        <div style="flex: 1; min-width: 300px;">
-                            <label for="testPrompt" style="display: block; margin-bottom: 0.5rem; color: var(--color-text);">Test Prompt:</label>
-                            <textarea 
-                                id="testPrompt" 
-                                rows="3" 
-                                style="width: 100%; padding: 0.5rem; background: var(--color-surface); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 4px; font-family: inherit;"
-                                placeholder="Enter a test prompt...">Write a haiku about programming.</textarea>
-                        </div>
-                        <div style="flex: 0; min-width: 200px; display: flex; flex-direction: column; justify-content: flex-end; gap: 0.5rem;">
-                            <button id="selectAllTestBtn" class="action-button" style="width: 100%;">Select All Visible</button>
-                            <button id="selectTop10Btn" class="action-button" style="width: 100%;">Select Top 10</button>
-                            <button id="clearSelectionBtn" class="ghost-button" style="width: 100%;">Clear Selection</button>
-                            <button id="runLatencyTestBtn" class="action-button" style="width: 100%;" disabled>Run Test (0 selected)</button>
-                            <button id="runTokenTestBtn" class="action-button" style="width: 100%; background: var(--color-accent); border-color: var(--color-accent);" disabled>Run Token Test (0 selected)</button>
-                        </div>
-                    </div>
-                    <div id="latencyResults" style="margin-top: 1rem;"></div>
-                </div>
-            </header>
+          <div class="control-spacer" aria-hidden="true"></div>
 
-            <main>
-                <div id="loading" class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading complete model information...</p>
-                </div>
-
-                <div id="error" class="error hidden">
-                    <p>Failed to load model information. Please check server logs.</p>
-                </div>
-
-                <div id="stats" class="stats hidden">
-                    <div class="stat-item">
-                        <span class="stat-label">Total Models:</span>
-                        <span class="stat-value" id="totalModels">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Showing:</span>
-                        <span class="stat-value" id="showingModels">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Page:</span>
-                        <span class="stat-value" id="currentPage">1</span>
-                    </div>
-                    <div class="stat-item cache-status" id="cacheStatus">
-                        <span class="stat-label">Cache:</span>
-                        <span class="stat-value" id="cacheInfo">Loading...</span>
-                    </div>
-                </div>
-
-                <div class="resource-links hidden" id="resourceLinks">
-                    <a href="https://wuu73.org/blog/" target="_blank" rel="noopener noreferrer" class="resource-link">
-                       
-                        <span class="link-text">Lots of cool AI stuff and links</span>
-                        <span class="link-arrow">→</span>
-                    </a>
-                    <a href="https://wuu73.org/aicp" target="_blank" rel="noopener noreferrer" class="resource-link">
-                        <span class="link-icon">🔧</span>
-                        <span class="link-text">Free Local AI Surgical Context Automater</span>
-                        <span class="link-arrow">→</span>
-                    </a>
-                </div>
-
-                <div id="modelsContainer" class="models-container hidden">
-                    <!-- Models will be dynamically inserted here -->
-                </div>
-
-                <div id="pagination" class="pagination hidden">
-                    <button id="prevBtn" class="page-btn">← Previous</button>
-                    <span id="pageInfo"></span>
-                    <button id="nextBtn" class="page-btn">Next →</button>
-                </div>
-            </main>
+          <button id="downloadCsvBtn" class="ghost-button" type="button">
+            Download CSV
+          </button>
+          <button id="downloadMdBtn" class="ghost-button" type="button">
+            Download Markdown
+          </button>
         </div>
 
-        <script type="module" src="script.js"></script>
-    </body>
+        <!-- Latency Testing Section -->
+        <div class="latency-tester" id="latencyTester" style="display: none">
+          <h2
+            style="
+              margin-top: 2rem;
+              margin-bottom: 1rem;
+              color: var(--color-text);
+            "
+          >
+            🚀 Model Latency Tester
+          </h2>
+          <div
+            class="test-controls"
+            style="
+              display: flex;
+              gap: 1rem;
+              margin-bottom: 1rem;
+              flex-wrap: wrap;
+            "
+          >
+            <div style="flex: 1; min-width: 300px">
+              <label
+                for="testPrompt"
+                style="
+                  display: block;
+                  margin-bottom: 0.5rem;
+                  color: var(--color-text);
+                "
+                >Test Prompt:</label
+              >
+              <textarea
+                id="testPrompt"
+                rows="3"
+                style="
+                  width: 100%;
+                  padding: 0.5rem;
+                  background: var(--color-surface);
+                  color: var(--color-text);
+                  border: 1px solid var(--color-border);
+                  border-radius: 4px;
+                  font-family: inherit;
+                "
+                placeholder="Enter a test prompt..."
+              >
+Write a haiku about programming.</textarea
+              >
+            </div>
+            <div
+              style="
+                flex: 0;
+                min-width: 200px;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                gap: 0.5rem;
+              "
+            >
+              <button
+                id="selectAllTestBtn"
+                class="action-button"
+                style="width: 100%"
+              >
+                Select All Visible
+              </button>
+              <button
+                id="selectTop10Btn"
+                class="action-button"
+                style="width: 100%"
+              >
+                Select Top 10
+              </button>
+              <button
+                id="clearSelectionBtn"
+                class="ghost-button"
+                style="width: 100%"
+              >
+                Clear Selection
+              </button>
+              <button
+                id="runLatencyTestBtn"
+                class="action-button"
+                style="width: 100%"
+                disabled
+              >
+                Run Test (0 selected)
+              </button>
+              <button
+                id="runTokenTestBtn"
+                class="action-button"
+                style="
+                  width: 100%;
+                  background: var(--color-accent);
+                  border-color: var(--color-accent);
+                "
+                disabled
+              >
+                Run Token Test (0 selected)
+              </button>
+            </div>
+          </div>
+          <div id="latencyResults" style="margin-top: 1rem"></div>
+        </div>
+      </header>
+
+      <main>
+        <div id="loading" class="loading">
+          <div class="spinner"></div>
+          <p>Loading complete model information...</p>
+        </div>
+
+        <div id="error" class="error hidden">
+          <p>Failed to load model information. Please check server logs.</p>
+        </div>
+
+        <div id="stats" class="stats hidden">
+          <div class="stat-item">
+            <span class="stat-label">Total Models:</span>
+            <span class="stat-value" id="totalModels">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Showing:</span>
+            <span class="stat-value" id="showingModels">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Page:</span>
+            <span class="stat-value" id="currentPage">1</span>
+          </div>
+          <div class="stat-item cache-status" id="cacheStatus">
+            <span class="stat-label">Cache:</span>
+            <span class="stat-value" id="cacheInfo">Loading...</span>
+          </div>
+        </div>
+
+        <div class="resource-links hidden" id="resourceLinks">
+          <a
+            href="https://wuu73.org/blog/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="resource-link"
+          >
+            <span class="link-text">Lots of cool AI stuff and links</span>
+            <span class="link-arrow">→</span>
+          </a>
+          <a
+            href="https://wuu73.org/aicp"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="resource-link"
+          >
+            <span class="link-icon">🔧</span>
+            <span class="link-text"
+              >Free Local AI Surgical Context Automater</span
+            >
+            <span class="link-arrow">→</span>
+          </a>
+          <div class="donation-accordion">
+            <button
+              class="resource-link donation-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="donationDetails"
+            >
+              <span class="donation-icon" aria-hidden="true">💚</span>
+              <span class="donation-mainline">
+                <span class="donation-title" style="font-weight: normal"
+                  ><p>Support with crypto</p></span
+                >
+                <div
+                  class="donation-addresses"
+                  style="margin-top: 0.5rem; font-weight: normal"
+                >
+                  <div>
+                    TAO:
+                    <span class="crypto-address"
+                      >5Hq3foT3rBKfDB2Py8jVrDvg3yPUeFEdWqwwKKnih5fqCS9X</span
+                    >
+                  </div>
+                  <div>
+                    BTC:
+                    <span class="crypto-address"
+                      >bc1qne2mffgcjwk4f5lnffs6gcmu63rwskl3yadtkp</span
+                    >
+                  </div>
+                  <div>
+                    LTC:
+                    <span class="crypto-address"
+                      >ltc1q3z327a3ea22mlhtawmdjxmwn69n65a32fek2s4</span
+                    >
+                  </div>
+                </div>
+                <span
+                  class="donation-highlight"
+                  style="margin-top: 0.5rem; font-weight: normal"
+                  >We only need 0.0307 TAO per month for reliability testing
+                  (~$12 USD).</span
+                >
+                <span class="donation-footnote" style="font-weight: normal"
+                  >Email
+                  <span class="donation-contact"
+                    ><a href="mailto:tom@wuu73.org">tom@wuu73.org</a></span
+                  >
+                  to connect your donation.</span
+                >
+              </span>
+              <span class="accordion-arrow" aria-hidden="true">↓</span>
+            </button>
+            <div class="donation-content" id="donationDetails" hidden>
+              <div class="donation-details">
+                <p>
+                  Your support funds deeper testing for uptime, latency, token
+                  limits, and reliability across every model.
+                </p>
+                <ul class="donation-list">
+                  <li>
+                    Share verified uptime and delay data for any model, any day.
+                  </li>
+                  <li>
+                    Identify reliable, low-cost providers for coding, image, or
+                    video workloads.
+                  </li>
+                  <li>
+                    Confirm JSON/tooling/XML capabilities for agentic tasks.
+                  </li>
+                  <li>
+                    Expand periodic testing so you get fail rates, speed, and
+                    availability updates.
+                  </li>
+                </ul>
+                <p>
+                  If you contribute TAO or other crypto, we invest it directly
+                  into more testing and better guidance.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="modelsContainer" class="models-container hidden">
+          <!-- Models will be dynamically inserted here -->
+        </div>
+
+        <div id="pagination" class="pagination hidden">
+          <button id="prevBtn" class="page-btn">← Previous</button>
+          <span id="pageInfo"></span>
+          <button id="nextBtn" class="page-btn">Next →</button>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="script.js"></script>
+  </body>
 </html>

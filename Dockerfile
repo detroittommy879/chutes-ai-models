@@ -13,6 +13,16 @@ RUN npm install
 # Copy application files
 COPY . .
 
+
+# Debug: Show what's in the bigtokens directory after copying
+RUN echo "=== DEBUG: Contents of /app/bigtokens ===" && \
+    ls -la /app/bigtokens && \
+    echo "=== DEBUG: Contents of /app/bigtokens/generated_tokens ===" && \
+    ls -la /app/bigtokens/generated_tokens && \
+    echo "=== DEBUG: Contents of /app/bigtokens/ (recursive) ===" && \
+    find /app/bigtokens -type f | head -20
+
+# …
 # Build with Vite
 RUN npm run build
 
@@ -23,10 +33,10 @@ RUN npm prune --production
 RUN mkdir -p /app/cache
 
 # Expose port
-EXPOSE 3888
+EXPOSE 3444
 
 # Set production environment
 ENV NODE_ENV=production
 
-# Start the application
-CMD ["node", "server.js"]
+# Start the application with logging
+CMD ["sh", "-c", "echo '=== DEBUG: Starting server ===' && echo 'Current directory: $(pwd)' && echo 'Contents of /app:' && ls -la /app && echo 'Contents of /app/bigtokens:' && ls -la /app/bigtokens && echo 'Contents of /app/bigtokens/generated_tokens:' && ls -la /app/bigtokens/generated_tokens && node server.js"]

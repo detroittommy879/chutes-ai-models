@@ -1,0 +1,22 @@
+services:
+  chutes-models:
+    build: ./chutes-11
+    container_name: chutes-11
+    restart: unless-stopped
+    user: "1003:1003"
+    ports:
+      - "3444:3444"
+    env_file:
+      - ./chutes-11/.env
+    volumes:
+      - /var/www/doc-data/chutes-sav/bigtokens:/app/bigtokens:rw
+      - /var/www/doc-data/chutes-sav/cache:/app/cache:rw
+    environment:
+      - NODE_ENV=production
+      - PORT=3444
+      - CACHE_DURATION_MINUTES=10
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

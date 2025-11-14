@@ -21,9 +21,9 @@ const cacheTracker = new Map();
 // Middleware
 app.use(cors());
 // Increase JSON body size limit to handle large token files (up to 2MB)
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '29mb' }));
 // Also handle text payloads with increased limit
-app.use(express.text({ limit: '2mb' }));
+app.use(express.text({ limit: '29mb' }));
 
 // Serve static files from dist in production, public in development
 const staticDir = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
@@ -585,7 +585,37 @@ app.post('/api/token-test-results', async (req, res) => {
 app.get('/api/token-files', async (req, res) => {
     try {
         const tokenFilesDir = path.join(__dirname, 'bigtokens', 'generated_tokens');
+        console.log('🔍 Debug: Looking for token files in directory:', tokenFilesDir);
+        console.log('🔍 Debug: Current working directory:', process.cwd());
+        console.log('🔍 Debug: __dirname:', __dirname);
+        console.log('🔍 Debug: Full path being checked:', tokenFilesDir);
+        
+        // Check if directory exists
+        try {
+            const dirStats = await fs.stat(tokenFilesDir);
+            console.log('✅ Debug: Directory exists, stats:', dirStats);
+        } catch (dirErr) {
+            console.error('❌ Debug: Directory does not exist or is not accessible:', dirErr);
+            console.log('📁 Debug: Listing all directories in /app/bigtokens:');
+            try {
+                const bigtokensDir = path.join(__dirname, 'bigtokens');
+                const allBigtokensItems = await fs.readdir(bigtokensDir);
+                console.log('📁 Debug: Contents of bigtokens directory:', allBigtokensItems);
+            } catch (listErr) {
+                console.error('❌ Debug: Could not list bigtokens directory:', listErr);
+            }
+            return res.status(500).json({
+                error: 'Token files directory does not exist',
+                message: 'The generated_tokens directory was not found. Please check Docker volume mounting.',
+                debug: {
+                    tokenFilesDir: tokenFilesDir,
+                    exists: false
+                }
+            });
+        }
+        
         const files = await fs.readdir(tokenFilesDir);
+        console.log('📄 Debug: Found token files:', files);
         
         // Parse token files and extract token counts
         const tokenFiles = files
@@ -606,12 +636,18 @@ app.get('/api/token-files', async (req, res) => {
             .filter(f => f !== null)
             .sort((a, b) => a.tokenCount - b.tokenCount);
 
+        console.log('✅ Debug: Successfully parsed token files:', tokenFiles.length);
         res.json({ files: tokenFiles });
     } catch (error) {
-        console.error('Error listing token files:', error);
+        console.error('❌ Error listing token files:', error);
+        console.error('❌ Error stack:', error.stack);
         res.status(500).json({
             error: 'Failed to list token files',
-            message: error.message
+            message: error.message,
+            debug: {
+                error: error.message,
+                stack: error.stack
+            }
         });
     }
 });
@@ -620,21 +656,50 @@ app.get('/api/token-files', async (req, res) => {
 app.get('/api/token-files/:filename', async (req, res) => {
     try {
         const { filename } = req.params;
+        console.log('🔍 Debug: Request for token file:', filename);
         
         // Validate filename to prevent directory traversal
         if (!filename.match(/^tokens_[\d,]+\.txt$/)) {
+            console.log('❌ Debug: Invalid filename format:', filename);
             return res.status(400).json({ error: 'Invalid filename' });
         }
 
-        const filePath = path.join(__dirname, 'bigtokens', 'generated_tokens', filename);
+    const filePath = path.join(__dirname, 'bigtokens', 'generated_tokens', filename);
+    const resolvedPath = path.resolve(filePath);
+    console.log('🔍 Debug: Looking for file at path:', filePath);
+    console.log('🔍 Debug: Full file path:', resolvedPath);
+    // Print full path for token test file access
+    console.log('=== TOKEN TEST: Attempting to read token txt file at FULL PATH:', resolvedPath);
+        
+        try {
+            const fileStats = await fs.stat(filePath);
+            console.log('✅ Debug: File exists, stats:', fileStats);
+        } catch (fileErr) {
+            console.error('❌ Debug: File does not exist or is not accessible:', fileErr);
+            console.log('📁 Debug: Listing files in generated_tokens directory:');
+            try {
+                const generatedTokensDir = path.join(__dirname, 'bigtokens', 'generated_tokens');
+                const files = await fs.readdir(generatedTokensDir);
+                console.log('📁 Debug: Contents of generated_tokens:', files);
+            } catch (listErr) {
+                console.error('❌ Debug: Could not list generated_tokens directory:', listErr);
+            }
+        }
+
         const content = await fs.readFile(filePath, 'utf8');
+        console.log('✅ Debug: Successfully read token file:', filename, 'Size:', content.length, 'bytes');
         
         res.type('text/plain').send(content);
     } catch (error) {
-        console.error('Error reading token file:', error);
+        console.error('❌ Error reading token file:', error);
+        console.error('❌ Error stack:', error.stack);
         res.status(404).json({
             error: 'Token file not found',
-            message: error.message
+            message: error.message,
+            debug: {
+                error: error.message,
+                stack: error.stack
+            }
         });
     }
 });
